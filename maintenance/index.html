@@ -1,0 +1,1362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azzurro Hotels - Maintenance Dashboard</title>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #1e3a5f;
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Sky and Ocean Background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: linear-gradient(to bottom,
+                #87CEEB 0%,
+                #6BB6D6 15%,
+                #4A9FBF 30%,
+                #2E8BA8 45%,
+                #1E7491 60%,
+                #0D5E7A 75%,
+                #d4b896 90%,
+                #c9a981 100%
+            );
+            z-index: -10;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            bottom: 0; left: 0;
+            width: 100%; height: 35%;
+            background:
+                radial-gradient(circle at 20% 50%, rgba(210, 180, 140, 0.3) 0%, transparent 3%),
+                radial-gradient(circle at 60% 70%, rgba(222, 184, 135, 0.3) 0%, transparent 2%),
+                linear-gradient(to bottom,
+                    #d4b896 0%,
+                    #c9a981 30%,
+                    #d2b48c 60%,
+                    #c19a6b 100%
+                );
+            z-index: -9;
+        }
+
+        .wave-deep {
+            position: fixed;
+            bottom: 20%; left: 0;
+            width: 200%; height: 120px;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none"><path d="M0,50 Q150,20 300,50 T600,50 T900,50 T1200,50 T1500,50 T1800,50 L1800,120 L0,120 Z" fill="%231a5f7a" opacity="0.7"/></svg>');
+            background-size: 50% 120px;
+            animation: wave-slow 35s linear infinite;
+            z-index: -8;
+            opacity: 0.8;
+        }
+
+        .wave1 {
+            position: fixed;
+            bottom: 15%; left: 0;
+            width: 200%; height: 180px;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none"><path d="M0,60 Q100,10 200,60 T400,60 Q500,10 600,60 T800,60 Q900,10 1000,60 T1200,60 T1400,60 T1600,60 T1800,60 L1800,120 L0,120 Z" fill="%232a7a9e" opacity="0.85"/></svg>');
+            background-size: 50% 180px;
+            animation: wave 28s ease-in-out infinite;
+            z-index: -7;
+        }
+
+        .wave2 {
+            position: fixed;
+            bottom: 12%; left: 0;
+            width: 200%; height: 160px;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none"><path d="M0,45 Q120,5 240,45 T480,45 Q600,5 720,45 T960,45 Q1080,5 1200,45 T1440,45 T1680,45 T1800,45 L1800,120 L0,120 Z" fill="%2336a3c7" opacity="0.8"/></svg>');
+            background-size: 50% 160px;
+            animation: wave 22s ease-in-out infinite reverse;
+            z-index: -6;
+        }
+
+        .wave3 {
+            position: fixed;
+            bottom: 8%; left: 0;
+            width: 200%; height: 140px;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none"><path d="M0,35 Q90,0 180,35 T360,35 Q450,0 540,35 T720,35 Q810,0 900,35 T1080,35 T1260,35 T1440,35 T1620,35 T1800,35 L1800,120 L0,120 Z" fill="%2352c0e0" opacity="0.75"/></svg>');
+            background-size: 50% 140px;
+            animation: wave 18s ease-in-out infinite;
+            z-index: -5;
+        }
+
+        .wave-breaking {
+            position: fixed;
+            bottom: 5%; left: 0;
+            width: 200%; height: 100px;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none"><path d="M0,25 Q75,0 150,25 T300,25 Q375,0 450,25 T600,25 Q675,0 750,25 T900,25 Q975,0 1050,25 T1200,25 T1350,25 T1500,25 T1650,25 T1800,25 L1800,120 L0,120 Z" fill="%2370d4ed" opacity="0.7"/></svg>');
+            background-size: 50% 100px;
+            animation: wave-fast 14s ease-in-out infinite reverse;
+            z-index: -4;
+        }
+
+        .beach-foam {
+            position: fixed;
+            bottom: 0; left: 0;
+            width: 100%; height: 12%;
+            background:
+                radial-gradient(ellipse at 20% 50%, rgba(255, 255, 255, 0.4) 0%, transparent 40%),
+                linear-gradient(to top,
+                    rgba(194, 178, 128, 0.95) 0%,
+                    rgba(210, 180, 140, 0.7) 50%,
+                    transparent 100%
+                );
+            z-index: -3;
+            animation: foam-shimmer 8s ease-in-out infinite;
+        }
+
+        .wet-sand {
+            position: fixed;
+            bottom: 0; left: 0;
+            width: 100%; height: 8%;
+            background: linear-gradient(to top,
+                rgba(139, 119, 101, 0.3) 0%,
+                rgba(160, 140, 120, 0.2) 50%,
+                transparent 100%
+            );
+            z-index: -2;
+        }
+
+        @keyframes wave {
+            0%, 100% { transform: translateX(0) translateY(0); }
+            25% { transform: translateX(-5%) translateY(-3px); }
+            50% { transform: translateX(-25%) translateY(0); }
+            75% { transform: translateX(-30%) translateY(2px); }
+        }
+
+        @keyframes wave-slow {
+            0% { transform: translateX(0) translateY(0); }
+            100% { transform: translateX(-50%) translateY(0); }
+        }
+
+        @keyframes wave-fast {
+            0%, 100% { transform: translateX(0) scaleY(1); }
+            25% { transform: translateX(-8%) scaleY(1.05); }
+            50% { transform: translateX(-25%) scaleY(1); }
+            75% { transform: translateX(-35%) scaleY(0.98); }
+        }
+
+        @keyframes foam-shimmer {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.85; }
+        }
+
+        .auth-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            position: relative;
+            z-index: 1;
+        }
+
+        .auth-box {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .auth-header { text-align: center; margin-bottom: 30px; }
+        .auth-header h1 { color: #0891b2; font-size: 26px; margin-bottom: 8px; }
+        .auth-header p { color: #666; font-size: 14px; }
+
+        .auth-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: 12px;
+            background: none;
+            border: none;
+            color: #718096;
+            font-weight: 600;
+            cursor: pointer;
+            position: relative;
+            transition: color 0.3s;
+        }
+
+        .auth-tab.active { color: #0891b2; }
+        .auth-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px; left: 0; right: 0;
+            height: 2px;
+            background: #0891b2;
+        }
+
+        .auth-form { display: none; }
+        .auth-form.active { display: block; }
+
+        .error-message {
+            background: #fff5f5;
+            color: #f56565;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            display: none;
+        }
+        .error-message.show { display: block; }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+            display: none;
+        }
+        .container.show { display: block; }
+
+        header {
+            background: white;
+            padding: 25px 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-left h1 { color: #0891b2; font-size: 28px; margin-bottom: 5px; }
+        .subtitle { color: #666; font-size: 14px; }
+
+        .header-right { display: flex; align-items: center; gap: 15px; }
+
+        .user-info { text-align: right; }
+        .user-email { color: #4a5568; font-size: 14px; font-weight: 500; }
+
+        .btn-logout {
+            background: #e2e8f0;
+            color: #4a5568;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .btn-logout:hover { background: #cbd5e0; }
+
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: #0891b2;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .btn:hover {
+            background: #0e7490;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(8, 145, 178, 0.4);
+        }
+        .btn:disabled { background: #cbd5e0; cursor: not-allowed; transform: none; }
+
+        .btn-secondary { background: #14b8a6; }
+        .btn-secondary:hover { background: #0d9488; }
+
+        .properties-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+        }
+
+        .property-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            overflow: hidden;
+            transition: transform 0.3s;
+        }
+        .property-card:hover { transform: translateY(-5px); }
+
+        .property-header {
+            background: linear-gradient(135deg, #0891b2 0%, #06b6d4 50%, #14b8a6 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .property-name { font-size: 20px; font-weight: 600; }
+        .issue-count { background: rgba(255,255,255,0.3); padding: 5px 12px; border-radius: 20px; font-size: 14px; }
+
+        .rooms-container {
+            padding: 20px;
+            max-height: 65vh;          /* mobile-friendly */
+            overflow-y: auto;
+            overscroll-behavior: contain;
+        }
+        @media (min-width: 900px) {
+            .rooms-container { max-height: 600px; }  /* desktop cap */
+        }
+
+        .room-item {
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 12px;
+            transition: all 0.3s;
+        }
+        .room-item:hover {
+            border-color: #0891b2;
+            box-shadow: 0 5px 15px rgba(8, 145, 178, 0.1);
+        }
+
+        .room-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .room-number { font-weight: 600; color: #2d3748; font-size: 16px; }
+
+        .issues-list { margin-top: 10px; }
+
+        .issue-item {
+            background: #f0fdfa;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border-left: 4px solid #14b8a6;
+        }
+        .issue-item.high { border-left-color: #f56565; background: #fff5f5; }
+
+        .issue-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .issue-description { color: #2d3748; font-size: 14px; flex: 1; }
+
+        .urgency-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            background: #14b8a6;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .urgency-badge.high { background: #f56565; }
+        .urgency-badge:hover { transform: scale(1.05); }
+
+        .issue-time { font-size: 11px; color: #718096; margin-top: 5px; }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal.active { display: flex; }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal-header { font-size: 22px; font-weight: 600; color: #2d3748; margin-bottom: 20px; }
+
+        .form-group { margin-bottom: 20px; }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #4a5568;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #0891b2;
+        }
+
+        .form-textarea { resize: vertical; min-height: 100px; }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 25px;
+        }
+
+        .btn-cancel { background: #e2e8f0; color: #4a5568; }
+        .btn-cancel:hover { background: #cbd5e0; }
+
+        .btn-small { padding: 6px 12px; font-size: 12px; border-radius: 6px; }
+
+        .empty-state { text-align: center; padding: 30px; color: #718096; }
+
+        .stats { display: flex; gap: 10px; margin-bottom: 15px; }
+
+        .stat-badge {
+            background: #e0f2fe;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #0c4a6e;
+        }
+
+        .delete-btn {
+            background: #f56565;
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .delete-btn:hover { background: #e53e3e; }
+        .delete-btn:disabled { background: #cbd5e0; cursor: not-allowed; }
+
+        .auth-link { text-align: center; margin-top: 20px; color: #4a5568; font-size: 14px; }
+        .auth-link a { color: #0891b2; text-decoration: none; font-weight: 600; }
+        .auth-link a:hover { text-decoration: underline; }
+
+        /* File Upload Styles */
+        .file-upload-area {
+            border: 2px dashed #cbd5e0;
+            border-radius: 10px;
+            padding: 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #f7fafc;
+            margin-top: 8px;
+        }
+        .file-upload-area:hover {
+            border-color: #0891b2;
+            background: #e0f7fa;
+        }
+        .file-upload-area.dragover {
+            border-color: #0891b2;
+            background: #e0f7fa;
+        }
+        .file-upload-area input[type="file"] {
+            display: none;
+        }
+        .file-upload-label {
+            color: #718096;
+            font-size: 13px;
+        }
+        .file-upload-label span {
+            color: #0891b2;
+            font-weight: 600;
+        }
+        .file-preview-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .file-preview-item {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 2px solid #e2e8f0;
+            background: #f7fafc;
+        }
+        .file-preview-item img,
+        .file-preview-item video {
+            max-width: 150px;
+            max-height: 120px;
+            display: block;
+            object-fit: cover;
+            border-radius: 6px;
+        }
+        .file-preview-remove {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: rgba(245, 101, 101, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+        .upload-progress {
+            width: 100%;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 3px;
+            margin-top: 8px;
+            overflow: hidden;
+            display: none;
+        }
+        .upload-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #0891b2, #14b8a6);
+            border-radius: 3px;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .update-media {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .update-media img {
+            max-width: 200px;
+            max-height: 160px;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 1px solid #e2e8f0;
+            transition: transform 0.2s;
+            object-fit: cover;
+        }
+        .update-media img:hover {
+            transform: scale(1.03);
+        }
+        .update-media video {
+            max-width: 280px;
+            max-height: 200px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        .media-lightbox {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .media-lightbox.active {
+            display: flex;
+        }
+        .media-lightbox img,
+        .media-lightbox video {
+            max-width: 90vw;
+            max-height: 90vh;
+            border-radius: 12px;
+        }
+    </style>
+
+</head>
+<body>
+
+    <!-- Auth removed - handled by parent shell -->
+
+    <div class="container" id="mainContainer">
+        <header>
+            <div class="header-left">
+                <h1>🏨 Azzurro Hotels - Maintenance Dashboard</h1>
+                <p class="subtitle">Sydney Properties Management System</p>
+            </div>
+            <div class="header-right">
+                <div class="user-info">
+                    <div class="user-email" id="userEmail">Loading...</div>
+                </div>
+            </div>
+        </header>
+
+        <div class="controls">
+            <button class="btn" id="addPropertyBtn" onclick="openPropertyModal()">+ Add Property</button>
+            <button class="btn btn-secondary" onclick="exportData()">📊 Export Report</button>
+            <button class="btn" style="background: #64748b;" onclick="openArchiveModal()">📦 Archive</button>
+        </div>
+
+        <div class="properties-grid" id="propertiesGrid">
+            <div class="empty-state"><h3>Loading...</h3><p>Connecting to database</p></div>
+        </div>
+    </div>
+
+    <!-- Modals (unchanged) -->
+    <div class="modal" id="propertyModal">
+        <div class="modal-content">
+            <div class="modal-header">Add New Property</div>
+            <div class="form-group">
+                <label class="form-label">Property Name</label>
+                <input type="text" class="form-input" id="propertyNameInput" placeholder="e.g., Bondi Beach House">
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-cancel" onclick="closePropertyModal()">Cancel</button>
+                <button class="btn" onclick="addProperty()">Add Property</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="roomModal">
+        <div class="modal-content">
+            <div class="modal-header">Add Room / Area</div>
+            <input type="hidden" id="currentPropertyId">
+            <div class="form-group">
+                <label class="form-label">Select Area</label>
+                <select class="form-select" id="roomTypeInput" onchange="toggleCustomRoomInput()">
+                    <option value="" selected disabled>Choose an area...</option>
+                    <option value="Room">Room</option>
+                    <option value="Kitchen">Kitchen</option>
+                    <option value="Bathrooms">Bathrooms</option>
+                    <option value="Common Area">Common Area</option>
+                    <option value="Garage">Garage</option>
+                    <option value="Storage">Storage</option>
+                    <option value="Custom">Custom (type your own)</option>
+                </select>
+            </div>
+            <div class="form-group" id="customRoomGroup" style="display:none;">
+                <label class="form-label">Custom Area Name</label>
+                <input type="text" class="form-input" id="roomCustomInput" placeholder="e.g., Laundry, Reception, Hallway">
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-cancel" onclick="closeRoomModal()">Cancel</button>
+                <button class="btn" onclick="addRoom()">Add</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="issueModal">
+        <div class="modal-content">
+            <div class="modal-header">Log Maintenance Issue</div>
+            <input type="hidden" id="currentRoomId">
+            <div class="form-group">
+                <label class="form-label">Issue Description</label>
+                <textarea class="form-textarea" id="issueDescriptionInput" placeholder="Describe the maintenance issue..."></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Urgency Level</label>
+                <select class="form-select" id="issueUrgencyInput">
+                    <option value="normal">Normal</option>
+                    <option value="high">High</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-cancel" onclick="closeIssueModal()">Cancel</button>
+                <button class="btn" onclick="addIssue()">Log Issue</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="archiveModal">
+        <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header">📦 Archived Issues</div>
+            <div id="archivedIssuesList" style="max-height: 500px; overflow-y: auto;">
+                <p style="text-align: center; color: #718096;">Loading archived issues...</p>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-cancel" onclick="closeArchiveModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="issueUpdateModal">
+        <div class="modal-content">
+            <div class="modal-header">Update Issue</div>
+            <div style="margin-bottom: 15px;">
+                <strong id="issueUpdateProperty"></strong> - <span id="issueUpdateRoom"></span>
+            </div>
+            <div style="margin-bottom: 15px; padding: 12px; background: #f7fafc; border-radius: 8px;">
+                <div style="font-weight: 600; margin-bottom: 5px;">Issue:</div>
+                <div id="issueUpdateDescription"></div>
+            </div>
+            <div class="form-group">
+                <label>Add Update:</label>
+                <textarea id="issueUpdateText" rows="4" placeholder="Enter update notes..." style="width:100%; padding:12px; border:2px solid #e2e8f0; border-radius:8px; font-family:inherit;"></textarea>
+                <label style="margin-top: 10px;">Attach Photos / Videos:</label>
+                <div class="file-upload-area" id="fileUploadArea">
+                    <input type="file" id="fileUploadInput" multiple accept="image/*,video/*">
+                    <div class="file-upload-label">
+                        <div style="font-size: 24px; margin-bottom: 4px;">📎</div>
+                        <span>Click to browse</span> or drag & drop<br>
+                        <span style="font-size: 11px; color: #a0aec0;">Images & videos (max 10MB each)</span>
+                    </div>
+                </div>
+                <div class="file-preview-container" id="filePreviewContainer"></div>
+                <div class="upload-progress" id="uploadProgress">
+                    <div class="upload-progress-bar" id="uploadProgressBar"></div>
+                </div>
+            </div>
+            <div id="issueUpdatesList" style="margin-top: 20px;">
+                <div style="font-weight: 600; margin-bottom: 10px;">Previous Updates:</div>
+                <div id="issueUpdatesContent"></div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn" onclick="saveIssueUpdate()">Add Update</button>
+                <button class="btn" style="background: #f59e0b;" onclick="archiveIssueFromModal()">📦 Archive</button>
+                <button class="btn btn-cancel" onclick="closeIssueUpdateModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Media Lightbox -->
+    <div class="media-lightbox" id="mediaLightbox" onclick="closeLightbox()">
+        <div id="lightboxContent"></div>
+    </div>
+
+    <!-- Edit Room Modal -->
+    <div class="modal" id="editRoomModal">
+        <div class="modal-content">
+            <div class="modal-header">Edit Room / Area</div>
+            <input type="hidden" id="editPropertyId">
+            <input type="hidden" id="editRoomId">
+            <div class="form-group">
+                <label class="form-label">Room / Area Name</label>
+                <input type="text" class="form-input" id="editRoomNameInput">
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-cancel" onclick="closeEditRoomModal()">Cancel</button>
+                <button class="btn" onclick="saveRoomEdit()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Supabase module loader -->
+    <script type="module">
+        import { supabase } from '../supabase-config.js';
+        window.__sb = supabase;
+        window.__sbReady = true;
+        window.dispatchEvent(new CustomEvent('sb-ready'));
+    </script>
+
+    <script>
+        let sb = null;
+        let currentUser = null;
+        let properties = []; // Nested: [{id, name, rooms: [{id, number, issues: [{id, description, urgency, archived, timestamp, updates: [{text, timestamp, user, media}]}]}]}]
+        let pendingFiles = [];
+        const toId = (v) => String(v);
+
+        // ===== INIT =====
+        function init() {
+            if (window.__sbReady) { sb = window.__sb; onReady(); }
+            else window.addEventListener('sb-ready', () => { sb = window.__sb; onReady(); });
+        }
+
+        async function onReady() {
+            // Get auth session from parent (same origin = shared cookies)
+            const { data: { user } } = await sb.auth.getUser();
+            if (user) {
+                currentUser = user;
+                document.getElementById('userEmail').textContent = user.email;
+                document.getElementById('mainContainer').classList.add('show');
+                await loadData();
+                setupRealtime();
+            } else {
+                document.getElementById('propertiesGrid').innerHTML = '<div class="empty-state"><h3>Not signed in</h3><p>Please sign in from the main dashboard.</p></div>';
+            }
+        }
+
+        // ===== LOAD ALL DATA FROM SUPABASE =====
+        async function loadData() {
+            // Load properties
+            const { data: props } = await sb.from('properties').select('*').order('sort_order');
+            if (!props) { properties = []; render(); return; }
+
+            // Load rooms
+            const propIds = props.map(p => p.id);
+            const { data: rooms } = await sb.from('rooms').select('*').in('property_id', propIds.length ? propIds : ['none']).order('sort_order');
+
+            // Load issues
+            const roomIds = (rooms || []).map(r => r.id);
+            const { data: issues } = await sb.from('maintenance_issues').select('*').in('room_id', roomIds.length ? roomIds : ['none']).order('created_at');
+
+            // Load updates
+            const issueIds = (issues || []).map(i => i.id);
+            const { data: updates } = await sb.from('maintenance_updates').select('*').in('issue_id', issueIds.length ? issueIds : ['none']).order('created_at');
+
+            // Load media
+            const updateIds = (updates || []).map(u => u.id);
+            const { data: media } = await sb.from('maintenance_media').select('*').in('update_id', updateIds.length ? updateIds : ['none']);
+
+            // Build media map: update_id -> media[]
+            const mediaMap = {};
+            (media || []).forEach(m => {
+                if (!mediaMap[m.update_id]) mediaMap[m.update_id] = [];
+                mediaMap[m.update_id].push({ url: m.url, type: m.media_type, name: m.file_name });
+            });
+
+            // Build updates map: issue_id -> updates[]
+            const updatesMap = {};
+            (updates || []).forEach(u => {
+                if (!updatesMap[u.issue_id]) updatesMap[u.issue_id] = [];
+                updatesMap[u.issue_id].push({
+                    id: u.id,
+                    text: u.text || '',
+                    timestamp: new Date(u.created_at).getTime(),
+                    user: u.author_email,
+                    media: mediaMap[u.id] || [],
+                });
+            });
+
+            // Build issues map: room_id -> issues[]
+            const issuesMap = {};
+            (issues || []).forEach(i => {
+                if (!issuesMap[i.room_id]) issuesMap[i.room_id] = [];
+                issuesMap[i.room_id].push({
+                    id: i.id,
+                    description: i.description,
+                    urgency: i.urgency || 'normal',
+                    archived: i.archived || false,
+                    timestamp: i.created_at,
+                    updates: updatesMap[i.id] || [],
+                });
+            });
+
+            // Build rooms map: property_id -> rooms[]
+            const roomsMap = {};
+            (rooms || []).forEach(r => {
+                if (!roomsMap[r.property_id]) roomsMap[r.property_id] = [];
+                roomsMap[r.property_id].push({
+                    id: r.id,
+                    number: r.number,
+                    issues: issuesMap[r.id] || [],
+                });
+            });
+
+            // Build nested properties array
+            properties = props.map(p => ({
+                id: p.id,
+                name: p.name,
+                rooms: roomsMap[p.id] || [],
+            }));
+
+            render();
+        }
+
+        // ===== REALTIME =====
+        function setupRealtime() {
+            sb.channel('maint-rt')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'properties' }, () => loadData())
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'rooms' }, () => loadData())
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'maintenance_issues' }, () => loadData())
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'maintenance_updates' }, () => loadData())
+                .subscribe();
+        }
+
+        // ===== RENDER =====
+        function render() {
+            const grid = document.getElementById('propertiesGrid');
+            if (!properties || properties.length === 0) {
+                grid.innerHTML = '<div class="empty-state"><h3>No properties yet</h3><p>Add properties using the "+ Add Property" button</p></div>';
+                return;
+            }
+
+            grid.innerHTML = properties.map(property => {
+                const rooms = Array.isArray(property.rooms) ? property.rooms : [];
+                const totalIssues = rooms.reduce((sum, room) => sum + (room.issues?.filter(i => !i.archived).length || 0), 0);
+                const highIssues = rooms.reduce((sum, room) => sum + (room.issues?.filter(i => !i.archived && i.urgency === 'high').length || 0), 0);
+
+                return `
+                    <div class="property-card">
+                        <div class="property-header">
+                            <div class="property-name">${property.name}</div>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div class="issue-count">${totalIssues} issues</div>
+                                <button class="delete-btn" onclick="deleteProperty('${toId(property.id)}')">🗑️ Delete</button>
+                            </div>
+                        </div>
+                        <div class="rooms-container">
+                            <div class="stats">
+                                <div class="stat-badge">🏠 ${rooms.length} rooms/areas</div>
+                                ${highIssues > 0 ? `<div class="stat-badge" style="background: #fff5f5; color: #f56565;">⚠️ ${highIssues} urgent</div>` : ''}
+                            </div>
+                            ${rooms.map(room => {
+                                const activeIssues = (room.issues || []).filter(issue => !issue.archived);
+                                return `
+                                    <div class="room-item">
+                                        <div class="room-header">
+                                            <div class="room-number">${room.number}</div>
+                                            <div style="display: flex; gap: 8px;">
+                                                <button class="btn btn-small" onclick="openIssueModal('${toId(property.id)}','${toId(room.id)}')">+ Issue</button>
+                                                <button class="btn btn-small" style="background:#6366f1;" onclick="openEditRoomModal('${toId(property.id)}','${toId(room.id)}')">✏️ Edit</button>
+                                                <button class="delete-btn" onclick="deleteRoom('${toId(property.id)}','${toId(room.id)}')" style="padding: 4px 12px; font-size: 12px;">🗑️ Delete</button>
+                                            </div>
+                                        </div>
+                                        ${activeIssues.length > 0 ? `
+                                            <div class="issues-list">
+                                                ${activeIssues.map(issue => `
+                                                    <div class="issue-item ${issue.urgency}" onclick="openIssueUpdateModal('${toId(property.id)}','${toId(room.id)}','${toId(issue.id)}')" style="cursor: pointer;">
+                                                        <div class="issue-header">
+                                                            <div class="issue-description">${issue.description}</div>
+                                                            <div style="display: flex; gap: 8px; align-items: center;">
+                                                                <span class="urgency-badge ${issue.urgency}"
+                                                                      onclick="event.stopPropagation(); toggleUrgency('${toId(property.id)}','${toId(room.id)}','${toId(issue.id)}')">
+                                                                    ${issue.urgency}
+                                                                </span>
+                                                                <button class="btn" onclick="event.stopPropagation(); archiveIssue('${toId(property.id)}','${toId(room.id)}','${toId(issue.id)}')" style="padding: 4px 8px; font-size: 11px; background: #f59e0b;">📦</button>
+                                                                <button class="delete-btn" onclick="event.stopPropagation(); deleteIssue('${toId(property.id)}','${toId(room.id)}','${toId(issue.id)}')" style="padding: 4px 8px; font-size: 11px;">❌</button>
+                                                            </div>
+                                                        </div>
+                                                        <div class="issue-time">${new Date(issue.timestamp).toLocaleString()}</div>
+                                                        ${issue.updates && issue.updates.length > 0 ? `<div style="margin-top: 8px; font-size: 12px; color: #64748b;">📝 ${issue.updates.length} update${issue.updates.length !== 1 ? 's' : ''}${issue.updates.some(u => u.media && u.media.length > 0) ? ' 📷' : ''}</div>` : ''}
+                                                    </div>
+                                                `).join('')}
+                                            </div>
+                                        ` : '<p style="color: #a0aec0; font-size: 13px; margin-top: 8px;">No issues logged</p>'}
+                                    </div>
+                                `;
+                            }).join('')}
+                            <button class="btn btn-small" style="width: 100%; margin-top: 10px;" onclick="openRoomModal('${toId(property.id)}')">+ Add Room/Area</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ===== PROPERTY CRUD =====
+        function openPropertyModal() { document.getElementById('propertyModal').classList.add('active'); document.getElementById('propertyNameInput').value = ''; }
+        function closePropertyModal() { document.getElementById('propertyModal').classList.remove('active'); }
+
+        async function addProperty() {
+            const name = document.getElementById('propertyNameInput').value.trim();
+            if (!name) return;
+            await sb.from('properties').insert({ name, sort_order: properties.length });
+            closePropertyModal();
+            await loadData();
+        }
+
+        async function deleteProperty(propertyId) {
+            if (!confirm('Delete this property and all its rooms/issues?')) return;
+            // Delete cascade: rooms and issues will be deleted by FK cascade
+            await sb.from('properties').delete().eq('id', propertyId);
+            await loadData();
+        }
+
+        // ===== ROOM CRUD =====
+        function toggleCustomRoomInput() {
+            const sel = document.getElementById('roomTypeInput').value;
+            document.getElementById('customRoomGroup').style.display = sel === 'Custom' ? 'block' : 'none';
+        }
+
+        function openRoomModal(propertyId) {
+            document.getElementById('currentPropertyId').value = propertyId;
+            document.getElementById('roomTypeInput').value = '';
+            document.getElementById('roomCustomInput').value = '';
+            document.getElementById('customRoomGroup').style.display = 'none';
+            document.getElementById('roomModal').classList.add('active');
+        }
+
+        function closeRoomModal() { document.getElementById('roomModal').classList.remove('active'); }
+
+        async function addRoom() {
+            const propertyId = document.getElementById('currentPropertyId').value;
+            let type = document.getElementById('roomTypeInput').value;
+            if (type === 'Custom') type = document.getElementById('roomCustomInput').value.trim();
+            if (!type) return;
+
+            const property = properties.find(p => toId(p.id) === toId(propertyId));
+            const existingRooms = property ? property.rooms.length : 0;
+
+            await sb.from('rooms').insert({ property_id: propertyId, number: type, sort_order: existingRooms });
+            closeRoomModal();
+            await loadData();
+        }
+
+        async function deleteRoom(propertyId, roomId) {
+            if (!confirm('Delete this room and all its issues?')) return;
+            await sb.from('rooms').delete().eq('id', roomId);
+            await loadData();
+        }
+
+        // ===== ISSUE CRUD =====
+        function openIssueModal(propertyId, roomId) {
+            document.getElementById('currentPropertyId').value = propertyId;
+            document.getElementById('currentRoomId').value = roomId;
+            document.getElementById('issueDescriptionInput').value = '';
+            document.getElementById('issueUrgencyInput').value = 'normal';
+            document.getElementById('issueModal').classList.add('active');
+        }
+
+        function closeIssueModal() { document.getElementById('issueModal').classList.remove('active'); }
+
+        async function addIssue() {
+            const propertyId = document.getElementById('currentPropertyId').value;
+            const roomId = document.getElementById('currentRoomId').value;
+            const description = document.getElementById('issueDescriptionInput').value.trim();
+            const urgency = document.getElementById('issueUrgencyInput').value;
+            if (!description) return;
+
+            await sb.from('maintenance_issues').insert({
+                room_id: roomId,
+                property_id: propertyId,
+                description,
+                urgency,
+                reported_by: currentUser.id,
+            });
+            closeIssueModal();
+            await loadData();
+        }
+
+        async function toggleUrgency(propertyId, roomId, issueId) {
+            const property = properties.find(p => toId(p.id) === toId(propertyId));
+            if (!property) return;
+            const room = property.rooms.find(r => toId(r.id) === toId(roomId));
+            if (!room) return;
+            const issue = room.issues.find(i => toId(i.id) === toId(issueId));
+            if (!issue) return;
+
+            const newUrgency = issue.urgency === 'high' ? 'normal' : 'high';
+            await sb.from('maintenance_issues').update({ urgency: newUrgency }).eq('id', issueId);
+            await loadData();
+        }
+
+        async function deleteIssue(propertyId, roomId, issueId) {
+            if (!confirm('Delete this issue?')) return;
+            await sb.from('maintenance_issues').delete().eq('id', issueId);
+            await loadData();
+        }
+
+        // ===== ARCHIVE =====
+        async function archiveIssue(propertyId, roomId, issueId) {
+            await sb.from('maintenance_issues').update({ archived: true }).eq('id', issueId);
+            await loadData();
+        }
+
+        async function unarchiveIssue(propertyId, roomId, issueId) {
+            await sb.from('maintenance_issues').update({ archived: false }).eq('id', issueId);
+            await loadData();
+            renderArchivedIssues();
+        }
+
+        function openArchiveModal() {
+            document.getElementById('archiveModal').classList.add('active');
+            renderArchivedIssues();
+        }
+        function closeArchiveModal() { document.getElementById('archiveModal').classList.remove('active'); }
+
+        function renderArchivedIssues() {
+            const list = document.getElementById('archivedIssuesList');
+            const archived = [];
+            properties.forEach(p => {
+                (p.rooms || []).forEach(r => {
+                    (r.issues || []).filter(i => i.archived).forEach(i => {
+                        archived.push({ ...i, propertyName: p.name, roomNumber: r.number, propertyId: p.id, roomId: r.id });
+                    });
+                });
+            });
+
+            if (archived.length === 0) {
+                list.innerHTML = '<p style="text-align: center; color: #718096; padding: 20px;">No archived issues</p>';
+                return;
+            }
+
+            list.innerHTML = archived.map(i => `
+                <div style="padding: 12px; margin-bottom: 8px; background: #f7fafc; border-radius: 8px; border-left: 3px solid #f59e0b; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong>${i.propertyName}</strong> - ${i.roomNumber}<br>
+                        <span style="color: #4a5568;">${i.description}</span><br>
+                        <small style="color: #a0aec0;">${new Date(i.timestamp).toLocaleString()}</small>
+                    </div>
+                    <button class="btn btn-small" onclick="unarchiveIssue('${toId(i.propertyId)}','${toId(i.roomId)}','${toId(i.id)}')" style="background: #48bb78;">♻️ Unarchive</button>
+                </div>
+            `).join('');
+        }
+
+        // ===== FILE UPLOAD (Supabase Storage) =====
+        function setupFileUpload() {
+            const area = document.getElementById('fileUploadArea');
+            const input = document.getElementById('fileUploadInput');
+            if (!area || !input) return;
+            area.addEventListener('click', () => input.click());
+            area.addEventListener('dragover', (e) => { e.preventDefault(); area.classList.add('dragover'); });
+            area.addEventListener('dragleave', () => { area.classList.remove('dragover'); });
+            area.addEventListener('drop', (e) => { e.preventDefault(); area.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
+            input.addEventListener('change', (e) => { handleFiles(e.target.files); input.value = ''; });
+        }
+
+        function handleFiles(fileList) {
+            const maxSize = 10 * 1024 * 1024;
+            for (const file of fileList) {
+                if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) { alert(`"${file.name}" is not an image or video.`); continue; }
+                if (file.size > maxSize) { alert(`"${file.name}" exceeds 10MB limit.`); continue; }
+                pendingFiles.push(file);
+            }
+            renderFilePreviews();
+        }
+
+        function renderFilePreviews() {
+            const container = document.getElementById('filePreviewContainer');
+            if (!container) return;
+            container.innerHTML = '';
+            pendingFiles.forEach((file, idx) => {
+                const item = document.createElement('div');
+                item.className = 'file-preview-item';
+                const url = URL.createObjectURL(file);
+                if (file.type.startsWith('image/')) {
+                    item.innerHTML = `<img src="${url}"><button class="file-preview-remove" onclick="removePendingFile(${idx})">x</button>`;
+                } else {
+                    item.innerHTML = `<video src="${url}" muted></video><button class="file-preview-remove" onclick="removePendingFile(${idx})">x</button>`;
+                }
+                container.appendChild(item);
+            });
+        }
+
+        function removePendingFile(idx) { pendingFiles.splice(idx, 1); renderFilePreviews(); }
+
+        async function uploadFiles(issueId, updateId) {
+            if (pendingFiles.length === 0) return [];
+            const progressEl = document.getElementById('uploadProgress');
+            const barEl = document.getElementById('uploadProgressBar');
+            if (progressEl) progressEl.style.display = 'block';
+
+            const uploaded = [];
+            for (let i = 0; i < pendingFiles.length; i++) {
+                const file = pendingFiles[i];
+                const ext = file.name.split('.').pop();
+                const filename = `${Date.now()}_${i}.${ext}`;
+                const path = `maintenance/${issueId}/${filename}`;
+
+                const { data, error } = await sb.storage.from('maintenance-media').upload(path, file);
+                if (error) { console.error('Upload error:', error); alert(`Failed to upload "${file.name}"`); continue; }
+
+                const { data: urlData } = sb.storage.from('maintenance-media').getPublicUrl(path);
+                uploaded.push({ url: urlData.publicUrl, type: file.type.startsWith('image/') ? 'image' : 'video', name: file.name });
+
+                // Save media record
+                await sb.from('maintenance_media').insert({
+                    update_id: updateId,
+                    issue_id: issueId,
+                    url: urlData.publicUrl,
+                    media_type: file.type.startsWith('image/') ? 'image' : 'video',
+                    file_name: file.name,
+                });
+
+                if (barEl) barEl.style.width = Math.round(((i + 1) / pendingFiles.length) * 100) + '%';
+            }
+
+            if (progressEl) setTimeout(() => { progressEl.style.display = 'none'; if (barEl) barEl.style.width = '0%'; }, 500);
+            return uploaded;
+        }
+
+        // ===== LIGHTBOX =====
+        function openLightbox(url, type) {
+            const lb = document.getElementById('mediaLightbox');
+            const content = document.getElementById('lightboxContent');
+            if (type === 'video') {
+                content.innerHTML = `<video src="${url}" controls autoplay style="max-width:90vw;max-height:90vh;border-radius:12px;" onclick="event.stopPropagation()"></video>`;
+            } else {
+                content.innerHTML = `<img src="${url}" style="max-width:90vw;max-height:90vh;border-radius:12px;">`;
+            }
+            lb.classList.add('active');
+        }
+        function closeLightbox() { document.getElementById('mediaLightbox').classList.remove('active'); document.getElementById('lightboxContent').innerHTML = ''; }
+
+        // ===== ISSUE UPDATE MODAL =====
+        let currentIssueForUpdate = { propertyId: null, roomId: null, issueId: null };
+
+        function openIssueUpdateModal(propertyId, roomId, issueId) {
+            const pid = toId(propertyId), rid = toId(roomId), iid = toId(issueId);
+            const property = properties.find(p => toId(p.id) === pid);
+            if (!property) return;
+            const room = property.rooms.find(r => toId(r.id) === rid);
+            if (!room) return;
+            const issue = room.issues.find(i => toId(i.id) === iid);
+            if (!issue) return;
+
+            currentIssueForUpdate = { propertyId: pid, roomId: rid, issueId: iid };
+            document.getElementById('issueUpdateProperty').textContent = property.name;
+            document.getElementById('issueUpdateRoom').textContent = room.number;
+            document.getElementById('issueUpdateDescription').textContent = issue.description;
+            document.getElementById('issueUpdateText').value = '';
+            pendingFiles = [];
+            const previewContainer = document.getElementById('filePreviewContainer');
+            if (previewContainer) previewContainer.innerHTML = '';
+            const progressEl = document.getElementById('uploadProgress');
+            if (progressEl) progressEl.style.display = 'none';
+
+            const updatesContent = document.getElementById('issueUpdatesContent');
+            if (issue.updates && issue.updates.length > 0) {
+                updatesContent.innerHTML = issue.updates.map(update => {
+                    let mediaHTML = '';
+                    if (update.media && update.media.length > 0) {
+                        mediaHTML = '<div class="update-media">' + update.media.map(m => {
+                            if (m.type === 'video') {
+                                return `<video src="${m.url}" controls onclick="event.stopPropagation()" style="max-width:280px;max-height:200px;border-radius:8px;border:1px solid #e2e8f0;"></video>`;
+                            } else {
+                                return `<img src="${m.url}" onclick="event.stopPropagation(); openLightbox('${m.url}', 'image')" title="${m.name || 'Image'}">`;
+                            }
+                        }).join('') + '</div>';
+                    }
+                    return `
+                    <div style="padding: 10px; background: #f7fafc; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid #0ea5e9;">
+                        <div style="font-size: 13px; color: #64748b; margin-bottom: 5px;">${new Date(update.timestamp).toLocaleString()} - ${update.user}</div>
+                        <div>${update.text}</div>
+                        ${mediaHTML}
+                    </div>`;
+                }).join('');
+            } else {
+                updatesContent.innerHTML = '<p style="color: #a0aec0; font-size: 13px;">No updates yet</p>';
+            }
+
+            document.getElementById('issueUpdateModal').classList.add('active');
+            setupFileUpload();
+        }
+
+        function closeIssueUpdateModal() {
+            document.getElementById('issueUpdateModal').classList.remove('active');
+            currentIssueForUpdate = { propertyId: null, roomId: null, issueId: null };
+            pendingFiles = [];
+        }
+
+        async function saveIssueUpdate() {
+            const updateText = document.getElementById('issueUpdateText').value.trim();
+            if (!updateText && pendingFiles.length === 0) { alert('Please enter an update or attach a file'); return; }
+
+            const { issueId } = currentIssueForUpdate;
+
+            // Insert update record
+            const { data: updateRec } = await sb.from('maintenance_updates').insert({
+                issue_id: issueId,
+                author_email: currentUser.email,
+                text: updateText || '(attached files)',
+            }).select().single();
+
+            // Upload files if any
+            if (updateRec && pendingFiles.length > 0) {
+                await uploadFiles(issueId, updateRec.id);
+            }
+
+            pendingFiles = [];
+            await loadData();
+            // Reopen modal to show new update
+            openIssueUpdateModal(currentIssueForUpdate.propertyId, currentIssueForUpdate.roomId, issueId);
+        }
+
+        async function archiveIssueFromModal() {
+            const { propertyId, roomId, issueId } = currentIssueForUpdate;
+            await archiveIssue(propertyId, roomId, issueId);
+            closeIssueUpdateModal();
+        }
+
+        // ===== EXPORT =====
+        function exportData() {
+            let report = 'AZZURRO HOTELS - MAINTENANCE REPORT\n';
+            report += '='.repeat(50) + '\n';
+            report += `Generated: ${new Date().toLocaleString()}\n`;
+            report += `Generated by: ${currentUser?.email || 'Unknown'}\n\n`;
+
+            properties.forEach(property => {
+                report += `\n${property.name}\n`;
+                report += '-'.repeat(property.name.length) + '\n';
+                (property.rooms || []).forEach(room => {
+                    report += `\n  ${room.number}:\n`;
+                    const active = (room.issues || []).filter(i => !i.archived);
+                    if (active.length === 0) { report += `    No issues\n`; }
+                    else {
+                        active.forEach(issue => {
+                            report += `    [${String(issue.urgency || 'normal').toUpperCase()}] ${issue.description}\n`;
+                            report += `    Logged: ${new Date(issue.timestamp).toLocaleString()}\n`;
+                            if (issue.updates?.length) {
+                                report += `    Updates:\n`;
+                                issue.updates.forEach(u => { report += `      - ${new Date(u.timestamp).toLocaleString()} (${u.user}): ${u.text}\n`; });
+                            }
+                            report += '\n';
+                        });
+                    }
+                });
+            });
+
+            const blob = new Blob([report], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `azzurro-report-${Date.now()}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // ===== EDIT ROOM =====
+        function openEditRoomModal(propertyId, roomId) {
+            document.getElementById('editPropertyId').value = propertyId;
+            document.getElementById('editRoomId').value = roomId;
+            const property = properties.find(p => toId(p.id) === toId(propertyId));
+            if (!property) return;
+            const room = property.rooms.find(r => toId(r.id) === toId(roomId));
+            if (!room) return;
+            document.getElementById('editRoomNameInput').value = room.number;
+            document.getElementById('editRoomModal').classList.add('active');
+        }
+        function closeEditRoomModal() { document.getElementById('editRoomModal').classList.remove('active'); }
+
+        async function saveRoomEdit() {
+            const roomId = document.getElementById('editRoomId').value;
+            const newName = document.getElementById('editRoomNameInput').value.trim();
+            if (!newName) { alert('Room name cannot be empty'); return; }
+            await sb.from('rooms').update({ number: newName }).eq('id', roomId);
+            closeEditRoomModal();
+            await loadData();
+        }
+
+        // ===== MODAL CLOSE ON BACKGROUND =====
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('active'); });
+        });
+
+        // ===== START =====
+        init();
+    </script>
+
+</body>
+</html>
