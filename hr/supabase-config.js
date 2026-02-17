@@ -1,7 +1,2 @@
-export function isConfigured() {
-  return Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
-}
-
-export function isSupabaseConfigured() {
-  return isConfigured();
-}
+export { supabase, SUPABASE_URL, SUPABASE_ANON_KEY, isConfigured, isSupabaseConfigured }
+from "../supabase-config.js";
