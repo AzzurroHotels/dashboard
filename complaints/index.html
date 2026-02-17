@@ -1,0 +1,1410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azzurro Hotels - Complaint Manager</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0F172A; }
+  #root { min-height: 100vh; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- Load Supabase and expose globally -->
+<script type="module">
+  import { supabase } from '../supabase-config.js';
+  window.__sb = supabase;
+  window.__sbReady = true;
+  window.dispatchEvent(new CustomEvent('sb-ready'));
+</script>
+
+<script type="text/babel">
+const { useState, useRef, useEffect, useCallback } = React;
+
+const SYSTEM_PROMPT = `You are the AI Complaint Assistant for Azzurro Hotel. You help Receptionists and Complaint Managers handle guest complaints professionally and efficiently.
+
+You must STRICTLY follow these guidelines and NEVER offer solutions outside of them.
+
+═══ DOS AND DON'TS ═══
+1. Do NOT promise a refund before validating the complaint.
+2. Do NOT call the guest more than once in a day (follow up next day). If they don't respond, close the complaint.
+3. Do NOT disclose guest contacts to contractors.
+4. Always apologize as "WE" — representing the hotel as a business.
+5. Always use "we" in apologies, not "I".
+
+═══ CRITICAL REFUND POLICY ═══
+- NEVER offer a refund as a first option. Always offer a VOUCHER first.
+- If the guest insists, continue offering the voucher politely.
+- Only after the guest has insisted 3 TIMES can you offer a refund.
+- Even then, a refund is ONLY possible if the guest DID NOT USE THE BED (i.e., they did not stay/sleep in the room).
+- If the guest used the bed, a refund is NOT an option regardless of how many times they insist. The maximum compensation in that case is a voucher.
+- Escalation path: Voucher → Voucher (2nd ask) → Voucher (3rd ask) → Refund ONLY if bed was not used.
+- Always track how many times the guest has asked for a refund in your notes.
+
+═══ KEY FACTORS FOR DECISION-MAKING ═══
+- Severity of the Complaint: Impact on guest experience (safety, hygiene, service quality).
+- Evidence Provided: Photos, timestamps, or guest communication history.
+- Relevant Policies or Procedures: Hotel policies and SOPs to guide resolutions.
+- Availability of Immediate Solutions: Refunds, room changes, or apologies.
+- Escalation Thresholds: When to involve managers, Lisa, or external teams.
+- Guest's History: Loyalty status or past complaint patterns.
+
+═══ HOW TO VALIDATE A COMPLAINT ═══
+1. Gather Data: Review logs, reports, or evidence (housekeeping logs, minibar inventory, noise complaints, maintenance schedules). Confirm guest details: name, room number, dates of stay, specific complaint details.
+2. Communicate with Staff: Verify with housekeeping, maintenance, or front desk staff to cross-check guest's claims.
+3. Request Documentation from Guest: If complaint arises after checkout, request supporting materials like photos, videos, or specific incident times.
+4. Cross-Check Policies: Refer to hotel policies on refunds, service guarantees, or compensation limits.
+5. Assess Timing and Patterns: Was the complaint raised promptly during stay or much later? Look for recurring patterns across stays.
+6. Document the Investigation: Keep detailed records including timestamps, staff interviews, evidence review. Document photos/videos of interactions across platforms (GHL, Goki, Wati, Whistle). Record call attempts with dates, times, and outcomes.
+7. Follow Up: Reach out to guest or relevant staff. Keep guest informed about progress and resolution.
+
+═══ 5-STEP COMPLAINT HANDLING PROCESS ═══
+Step 1 — Complaint Received: Log with guest name, property, room/bed number, date, nature, initial observations.
+Step 2 — Respond to Guest: Acknowledge within 1-2 minutes. Request additional info/proof if needed. Sample: "Thank you for bringing this to our attention. We'll look into the matter immediately. Could you please share [specific proof]? We'll keep you informed of the next steps."
+Step 3 — Investigate: Check CCTV if applicable, gather staff input, inspect room/facility. Compile findings in a clear report.
+Step 4 — Escalate for Approval (if needed): Raise issue and proposed solutions to management with summary, evidence, and recommended action points.
+Step 5 — Inform the Guest: Notify guest of resolution or next steps. Sample: "After investigating, here's what we found: [summary]. We've arranged [solution] to address the issue, which will be completed by [date/time]. Please let us know if you need anything else."
+
+═══ RESPONDING TO COMPLAINTS FRAMEWORK ═══
+Acknowledge → Apologize → Investigate → Resolve → Follow-Up
+
+═══ RED FLAGS ═══
+- Inconsistent stories or vague complaints.
+- Threats to escalate unless demands are met.
+- Requests for refunds without evidence or documentation.
+- Repeat complaints from the same guest about unrelated issues.
+
+═══ 10 COMPLAINT SCENARIOS ═══
+
+Scenario 1 — Unclean Room (Post-Checkout):
+Validate: Review housekeeping logs, staff reports, guest communication logs. Check guest history. Ask for photos/videos.
+If Valid: Offer a voucher first. Only offer refund after guest insists 3 times AND only if they did not use the bed.
+If Invalid: Explain findings and deny compensation.
+
+Scenario 2 — Noise During Stay (Construction):
+Validate: Review noise complaint logs, verify proximity to construction, check if guest reported noise. Ask for timestamps.
+If Valid: Offer a voucher or discount first. Only offer refund after guest insists 3 times AND did not use the bed.
+If Invalid: Apologize, no compensation.
+
+Scenario 3 — Disputed Charges (Unused Items):
+Validate: Check minibar logs, staff notes/photos. Confirm if staff accessed minibar.
+If Valid: Offer a voucher first and apologize. Only offer refund after guest insists 3 times AND did not use the bed.
+If Invalid: Explain inventory process, deny refund.
+
+Scenario 4 — Room Temperature / AC Issues:
+Validate: Review maintenance logs, guest communication, confirm maintenance visit. Ask for details/photos.
+If Valid: Offer a voucher or upgrade first. Only offer refund after guest insists 3 times AND did not use the bed.
+If Invalid: Explain lack of documentation, apologize.
+
+Scenario 5 — Dirty Bathroom at Check-In:
+Validate: Review housekeeping logs and cleaning schedule. Check for cleanliness issue reports. Ask for photos.
+If Valid: Offer a voucher first. Only offer refund after guest insists 3 times AND did not use the bed.
+If Invalid: Explain cleaning procedures, offer goodwill gesture.
+
+Scenario 6 — Booking Miscommunication:
+Validate: Review booking details, guest communication before arrival. Review booking confirmation and emails.
+If Valid: Offer upgrade or discount.
+If Invalid: Apologize, explain booking details, offer goodwill gesture.
+
+Scenario 7 — Pest Infestation:
+Validate: Review pest control logs, guest room reports, inspect guest-provided photos.
+If Valid: Offer a voucher, upgrade, or discount first. Only offer refund after guest insists 3 times AND did not use the bed.
+If Invalid: Explain no pests found, offer goodwill gesture.
+
+Scenario 8 — Digital Key Issues:
+Validate: Review digital key system logs, check for reported issues, verify if addressed by staff.
+If Valid: Offer a voucher or discount first. Only offer refund after guest insists 3 times AND did not use the bed.
+If Invalid: Explain no technical issues, offer goodwill gesture.
+
+Scenario 9 — Poor Cleanliness (General):
+Validate: Review housekeeping logs, cleanliness reports, ask housekeeping for difficulties. Request photos.
+If Valid: Offer a voucher or discount first. Only offer refund after guest insists 3 times AND did not use the bed.
+If Invalid: Explain cleaning procedures, offer goodwill gesture.
+
+Scenario 10 — E-Bike Storage Policy:
+Validate: Review hotel policy on e-bikes, check staff communication about policy, ask if alternatives were offered.
+If Valid: Apologize, offer goodwill gesture, suggest alternatives.
+If Invalid: Clarify policy, no compensation, explain safety concerns.
+
+═══ YOUR BEHAVIOR ═══
+- Talk naturally and conversationally, like a knowledgeable colleague helping in real-time.
+- Be warm, professional, and empathetic.
+- Guide the employee step-by-step through the complaint handling process.
+- Ask clarifying questions to understand the situation before recommending actions.
+- If a situation is not covered by the above scenarios or guidelines, say: "This situation isn't covered in our current complaint handling guidelines. I'd recommend escalating this to management for guidance."
+- NEVER suggest solutions outside of these guidelines.
+- Reference specific steps, scenarios, and dos/don'ts when advising.
+- Keep responses concise but thorough.`;
+
+const CATEGORIES = [
+  "Cleanliness", "Noise", "Billing", "Maintenance",
+  "Pest", "Booking", "Digital Key", "Policy", "Temperature", "Lost Item", "Custom Complaint"
+];
+
+const COLUMNS = [
+  { id: "urgent", label: "Urgent", color: "#DC2626", bg: "#FEF2F2", icon: "🔴" },
+  { id: "pending_response", label: "Pending Guest Response", color: "#D97706", bg: "#FFFBEB", icon: "🟡" },
+  { id: "in_progress", label: "In Progress", color: "#2563EB", bg: "#EFF6FF", icon: "🔵" },
+  { id: "solved", label: "Solved", color: "#16A34A", bg: "#F0FDF4", icon: "🟢" },
+];
+
+// ─── SUPABASE-POWERED APP ───
+function App() {
+  const [complaints, setComplaints] = useState([]);
+  const [showNewForm, setShowNewForm] = useState(false);
+  const [selectedComplaint, setSelectedComplaint] = useState(null);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [draggedCard, setDraggedCard] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [sb, setSb] = useState(window.__sb || null);
+
+  // Delete complaint (and related activities)
+  const deleteComplaint = useCallback(async (complaintId) => {
+    if (!sb) return;
+    const ok = window.confirm('Delete this complaint? This will also remove its activity logs.');
+    if (!ok) return;
+
+    try {
+      // Optimistic UI
+      setComplaints(prev => prev.filter(c => c.id !== complaintId));
+
+      // Remove child records first (if FK exists)
+      await sb.from('complaint_activities').delete().eq('complaint_id', complaintId);
+      const { error } = await sb.from('complaints').delete().eq('id', complaintId);
+      if (error) throw error;
+    } catch (e) {
+      console.error('Delete failed:', e);
+      alert('Unable to delete this complaint. Please try again.');
+      // Reload to resync
+      loadComplaints();
+    }
+  }, [sb]);
+
+  // Wait for Supabase client
+  useEffect(() => {
+    if (window.__sb) { setSb(window.__sb); return; }
+    const handler = () => setSb(window.__sb);
+    window.addEventListener('sb-ready', handler);
+    return () => window.removeEventListener('sb-ready', handler);
+  }, []);
+
+  // Get current user from Supabase session
+  useEffect(() => {
+    if (!sb) return;
+    (async () => {
+      const { data: { user } } = await sb.auth.getUser();
+      if (user) {
+        const { data: profile } = await sb.from('profiles').select('*').eq('id', user.id).single();
+        if (profile) {
+          setCurrentUser({
+            id: profile.id,
+            email: profile.email,
+            fullName: profile.full_name,
+            role: profile.role === 'manager' || profile.role === 'admin' ? 'manager' : 'receptionist',
+          });
+        }
+      }
+    })();
+  }, [sb]);
+
+  // Load complaints from Supabase
+  useEffect(() => {
+    if (!sb || !currentUser) return;
+    loadComplaints();
+
+    // Realtime subscription
+    const channel = sb.channel('complaints-rt')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'complaints' }, () => loadComplaints())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'complaint_activities' }, () => loadComplaints())
+      .subscribe();
+
+    return () => { sb.removeChannel(channel); };
+  }, [sb, currentUser]);
+
+  async function loadComplaints() {
+    const { data: comps } = await sb.from('complaints').select('*').order('created_at', { ascending: false });
+    if (!comps) { setLoading(false); return; }
+
+    // Load activities for all complaints
+    const ids = comps.map(c => c.id);
+    let acts = [];
+    if (ids.length) {
+      const resActs = await sb.from('complaint_activities').select('*').in('complaint_id', ids).order('created_at');
+      acts = resActs.data || [];
+    }
+
+    const actMap = {};
+    (acts || []).forEach(a => {
+      if (!actMap[a.complaint_id]) actMap[a.complaint_id] = [];
+      actMap[a.complaint_id].push({
+        id: a.id,
+        author: a.author_name,
+        role: a.author_role,
+        text: a.text || '',
+        photo: a.media_url || null,
+        mediaType: a.media_type || null,
+        timestamp: a.created_at,
+      });
+    });
+
+    const mapped = comps.map(c => ({
+      id: c.id,
+      guestName: c.guest_name,
+      phone: c.phone || '',
+      email: c.email || '',
+      room: c.room,
+      location: c.location || '',
+      date: c.date,
+      category: c.category,
+      subCategory: c.sub_category || '',
+      description: c.description,
+      status: c.status,
+      priority: c.priority,
+      notes: c.notes || '',
+      source: c.source || '',
+      checkIn: c.check_in || '',
+      checkOut: c.check_out || '',
+      stillAtProperty: c.still_at_property || '',
+      usedBed: c.used_bed || '',
+      whoAtFault: c.who_at_fault || '',
+      escalatedBy: '',
+      totalAmount: '',
+      occurrence: '',
+      activities: actMap[c.id] || [],
+    }));
+
+    setComplaints(mapped);
+    setLoading(false);
+  }
+
+  const moveComplaint = async (id, newStatus) => {
+    setComplaints(prev => prev.map(c => c.id === id ? { ...c, status: newStatus } : c));
+    await sb.from('complaints').update({ status: newStatus }).eq('id', id);
+  };
+
+  const addComplaint = async (complaint) => {
+    const { data: inserted, error } = await sb.from('complaints').insert({
+      guest_name: complaint.guestName,
+      phone: complaint.phone || '',
+      email: complaint.email || '',
+      room: complaint.room,
+      location: complaint.location || '',
+      date: complaint.date || new Date().toISOString().split('T')[0],
+      category: complaint.category,
+      sub_category: complaint.subCategory || '',
+      description: complaint.description,
+      status: complaint.status || 'urgent',
+      priority: complaint.priority || 'medium',
+      notes: complaint.notes || '',
+      source: complaint.source || '',
+      check_in: complaint.checkIn || null,
+      check_out: complaint.checkOut || null,
+      still_at_property: complaint.stillAtProperty || '',
+      used_bed: complaint.usedBed || '',
+      who_at_fault: complaint.whoAtFault || '',
+      logged_by: currentUser.id,
+    }).select().single();
+
+    if (inserted) {
+      await sb.from('complaint_activities').insert({
+        complaint_id: inserted.id,
+        author_id: currentUser.id,
+        author_name: currentUser.fullName,
+        author_role: currentUser.role === 'manager' ? 'Complaints Manager' : 'Receptionist',
+        text: 'Complaint logged.',
+      });
+    }
+    setShowNewForm(false);
+  };
+
+  const updateComplaint = async (id, updates) => {
+    // Handle activities update separately
+    if (updates.activities) {
+      // The latest activity is the new one
+      const latest = updates.activities[updates.activities.length - 1];
+      if (latest && !latest._saved) {
+        await sb.from('complaint_activities').insert({
+          complaint_id: id,
+          author_id: currentUser.id,
+          author_name: latest.author,
+          author_role: latest.role,
+          text: latest.text || '',
+          media_url: latest.photo || '',
+          media_type: latest.mediaType || '',
+        });
+      }
+    }
+    if (updates.notes !== undefined) {
+      await sb.from('complaints').update({ notes: updates.notes }).eq('id', id);
+    }
+    // Update local state immediately
+    setComplaints(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
+  };
+
+  if (!sb || loading) {
+    return (
+      <div style={{ minHeight: "100vh", background: "linear-gradient(145deg, #0B1120 0%, #152238 50%, #1A2A4A 100%)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ textAlign: "center", color: "#C4A877" }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>📋</div>
+          <div style={{ fontSize: 14, fontFamily: "'DM Sans', sans-serif" }}>Loading Complaints...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return (
+      <div style={{ minHeight: "100vh", background: "linear-gradient(145deg, #0B1120 0%, #152238 50%, #1A2A4A 100%)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ textAlign: "center", color: "#94A3B8", fontSize: 14, fontFamily: "'DM Sans', sans-serif" }}>
+          Please sign in from the main dashboard.
+        </div>
+      </div>
+    );
+  }
+
+  const userRole = currentUser.role;
+
+  return (
+    <div style={{
+      minHeight: "100vh",
+      background: "linear-gradient(145deg, #0B1120 0%, #152238 50%, #1A2A4A 100%)",
+      fontFamily: "'DM Sans', 'Segoe UI', sans-serif",
+      color: "#E2E8F0",
+      position: "relative",
+    }}>
+      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet" />
+
+      {/* Header */}
+      <header style={{
+        background: "linear-gradient(135deg, #0F172A 0%, #1E293B 100%)",
+        borderBottom: "1px solid rgba(196,168,119,0.2)",
+        padding: "16px 32px",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        position: "sticky", top: 0, zIndex: 40, backdropFilter: "blur(20px)",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <div style={{
+            width: 42, height: 42, borderRadius: "50%",
+            background: "linear-gradient(135deg, #C4A877, #E8D5B0)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 20, fontWeight: 700, color: "#0F172A",
+            fontFamily: "'Playfair Display', serif",
+          }}>A</div>
+          <div>
+            <h1 style={{
+              margin: 0, fontSize: 20, fontWeight: 700, letterSpacing: 1,
+              fontFamily: "'Playfair Display', serif",
+              background: "linear-gradient(135deg, #C4A877, #F0E1C4)",
+              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+            }}>AZZURRO HOTEL</h1>
+            <p style={{ margin: 0, fontSize: 11, color: "#94A3B8", letterSpacing: 3, textTransform: "uppercase" }}>
+              Complaint Management System
+            </p>
+          </div>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <div style={{
+            display: "flex", alignItems: "center", gap: 10,
+            padding: "6px 14px", borderRadius: 20,
+            background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
+          }}>
+            <div style={{
+              width: 28, height: 28, borderRadius: "50%",
+              background: userRole === "manager" ? "linear-gradient(135deg, #C4A877, #E8D5B0)" : "linear-gradient(135deg, #638CFF, #8BAEFF)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 12, fontWeight: 700, color: "#0F172A",
+            }}>{currentUser.fullName.split(" ").map(n => n[0]).join("")}</div>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#E2E8F0" }}>{currentUser.fullName}</div>
+              <div style={{ fontSize: 10, color: userRole === "manager" ? "#C4A877" : "#638CFF" }}>
+                {userRole === "manager" ? "Complaints Manager" : "Receptionist"}
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Toolbar */}
+      <div style={{ padding: "16px 32px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 12 }}>
+          {COLUMNS.map(col => {
+            const count = complaints.filter(c => c.status === col.id).length;
+            return (
+              <div key={col.id} style={{
+                padding: "4px 12px", borderRadius: 16, fontSize: 12, fontWeight: 500,
+                background: `${col.color}15`, color: col.color, border: `1px solid ${col.color}30`,
+              }}>
+                {col.icon} {count}
+              </div>
+            );
+          })}
+        </div>
+        <button onClick={() => setShowNewForm(true)} style={{
+          background: "linear-gradient(135deg, #C4A877, #B89860)",
+          color: "#0F172A", border: "none", padding: "10px 24px", borderRadius: 10,
+          fontSize: 13, fontWeight: 600, cursor: "pointer", letterSpacing: 0.5,
+          boxShadow: "0 4px 15px rgba(196,168,119,0.3)", transition: "all 0.2s",
+        }}>
+          + New Complaint
+        </button>
+      </div>
+
+      {/* Kanban Board */}
+      <div style={{
+        display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16,
+        padding: "0 32px 32px", minHeight: "calc(100vh - 160px)",
+      }}>
+        {COLUMNS.map(col => (
+          <KanbanColumn
+            key={col.id}
+            column={col}
+            complaints={complaints.filter(c => c.status === col.id)}
+            onDrop={(cardId) => moveComplaint(cardId, col.id)}
+            onCardClick={setSelectedComplaint}
+            draggedCard={draggedCard}
+            setDraggedCard={setDraggedCard}
+            canDelete={currentUser?.role === 'manager'}
+            onDeleteComplaint={deleteComplaint}
+          />
+        ))}
+      </div>
+
+      {showNewForm && (
+        <NewComplaintForm onSubmit={addComplaint} onClose={() => setShowNewForm(false)} />
+      )}
+
+      {selectedComplaint && (
+        <ComplaintDetail
+          complaint={selectedComplaint}
+          currentUser={currentUser}
+          onClose={() => setSelectedComplaint(null)}
+          onUpdate={updateComplaint}
+          onMove={moveComplaint}
+        />
+      )}
+
+      <ChatWidget isOpen={chatOpen} onToggle={() => setChatOpen(!chatOpen)} />
+    </div>
+  );
+}
+
+// ─── UI COMPONENTS (unchanged) ───
+
+function KanbanColumn({ column, complaints, onDrop, onCardClick, draggedCard, setDraggedCard, canDelete, onDeleteComplaint }) {
+  const [dragOver, setDragOver] = useState(false);
+
+  return (
+    <div
+      onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={(e) => {
+        e.preventDefault();
+        setDragOver(false);
+        if (draggedCard) onDrop(draggedCard);
+        setDraggedCard(null);
+      }}
+      style={{
+        background: dragOver ? `${column.color}10` : "rgba(255,255,255,0.02)",
+        borderRadius: 16,
+        border: `1px solid ${dragOver ? column.color + "40" : "rgba(255,255,255,0.06)"}`,
+        padding: 16,
+        display: "flex", flexDirection: "column", gap: 12,
+        transition: "all 0.3s",
+        minHeight: 300,
+      }}
+    >
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        paddingBottom: 12, borderBottom: `2px solid ${column.color}30`,
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{
+            width: 10, height: 10, borderRadius: "50%", background: column.color,
+            boxShadow: `0 0 8px ${column.color}60`,
+          }} />
+          <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: 0.5 }}>{column.label}</span>
+        </div>
+        <span style={{
+          background: `${column.color}20`, color: column.color,
+          padding: "2px 10px", borderRadius: 12, fontSize: 12, fontWeight: 600,
+        }}>{complaints.length}</span>
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 10, flex: 1, overflowY: "auto" }}>
+        {complaints.map(c => (
+          <ComplaintCard
+            key={c.id}
+            complaint={c}
+            columnColor={column.color}
+            onClick={() => onCardClick(c)}
+            onDragStart={() => setDraggedCard(c.id)}
+            canDelete={canDelete}
+            onDelete={() => onDeleteComplaint?.(c.id)}
+          />
+        ))}
+        {complaints.length === 0 && (
+          <div style={{
+            flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
+            color: "#475569", fontSize: 13, fontStyle: "italic",
+          }}>
+            No complaints here
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── COMPLAINT CARD ───
+function ComplaintCard({ complaint, columnColor, onClick, onDragStart, canDelete, onDelete }) {
+  const priorityColors = { high: "#EF4444", medium: "#F59E0B", low: "#3B82F6" };
+
+  return (
+    <div
+      draggable
+      onDragStart={onDragStart}
+      onClick={onClick}
+      style={{
+        background: "rgba(15,23,42,0.6)",
+        border: "1px solid rgba(255,255,255,0.08)",
+        borderRadius: 12,
+        padding: 14,
+        cursor: "grab",
+        transition: "all 0.2s",
+        borderLeft: `3px solid ${columnColor}`,
+      }}
+      onMouseEnter={e => { e.currentTarget.style.background = "rgba(30,41,59,0.8)"; e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 25px rgba(0,0,0,0.3)"; }}
+      onMouseLeave={e => { e.currentTarget.style.background = "rgba(15,23,42,0.6)"; e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: 8, gap: 10 }}>
+        <span style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.3, flex: 1 }}>{complaint.guestName}</span>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{
+            fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 8,
+            background: `${priorityColors[complaint.priority]}20`,
+            color: priorityColors[complaint.priority],
+            textTransform: "uppercase", letterSpacing: 0.5,
+          }}>{complaint.priority}</span>
+
+          {canDelete && (
+            <button
+              title="Delete"
+              onMouseDown={(e) => { e.stopPropagation(); }}
+              onClick={(e) => { e.stopPropagation(); e.preventDefault(); onDelete?.(); }}
+              style={{
+                border: "1px solid rgba(255,255,255,0.10)",
+                background: "rgba(255,255,255,0.04)",
+                color: "#E2E8F0",
+                width: 28,
+                height: 28,
+                borderRadius: 10,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                lineHeight: 1,
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(239,68,68,0.12)"; e.currentTarget.style.borderColor = "rgba(239,68,68,0.35)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)"; }}
+            >
+              🗑️
+            </button>
+          )}
+        </div>
+      </div>
+      <div style={{ fontSize: 11, color: "#94A3B8", marginBottom: 6 }}>
+        Room {complaint.room} · {complaint.location || complaint.property || "—"}
+      </div>
+      <div style={{
+        fontSize: 12, color: "#CBD5E1", lineHeight: 1.5, marginBottom: 8,
+        display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
+      }}>
+        {complaint.description}
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span style={{
+          fontSize: 10, padding: "2px 8px", borderRadius: 6,
+          background: "rgba(196,168,119,0.1)", color: "#C4A877", fontWeight: 500,
+        }}>{complaint.category}</span>
+        <span style={{ fontSize: 10, color: "#64748B" }}>{complaint.date}</span>
+      </div>
+    </div>
+  );
+}
+
+// ─── NEW COMPLAINT FORM ───
+
+function NewComplaintForm({ onSubmit, onClose }) {
+  const [form, setForm] = useState({
+    guestName: "", phone: "", email: "", room: "", location: "",
+    date: new Date().toISOString().split("T")[0],
+    category: "Cleanliness", subCategory: "", customCategory: "",
+    description: "", priority: "medium", status: "urgent", notes: "",
+    source: "", checkIn: "", checkOut: "",
+    stillAtProperty: "", usedBed: "",
+    escalatedBy: "", occurrence: "",
+    totalAmount: "", whoAtFault: "",
+  });
+
+  const handleSubmit = () => {
+    if (!form.guestName || !form.room || !form.description) return;
+    const finalCategory = form.category === "Custom Complaint" ? (form.customCategory || "Custom Complaint") : form.category;
+    onSubmit({ ...form, category: finalCategory });
+  };
+
+  const set = (key) => (e) => setForm({ ...form, [key]: e.target.value });
+
+  const inputStyle = {
+    width: "100%", padding: "10px 14px", background: "rgba(255,255,255,0.05)",
+    border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#E2E8F0",
+    fontSize: 13, outline: "none", fontFamily: "'DM Sans', sans-serif", boxSizing: "border-box",
+  };
+  const labelStyle = { fontSize: 11, fontWeight: 600, color: "#94A3B8", marginBottom: 4, display: "block", letterSpacing: 0.5, textTransform: "uppercase" };
+  const sectionStyle = { fontSize: 13, fontWeight: 700, color: "#C4A877", marginBottom: 12, marginTop: 24, paddingBottom: 8, borderBottom: "1px solid rgba(196,168,119,0.15)", letterSpacing: 0.5 };
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)",
+      display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50,
+    }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{
+        background: "linear-gradient(145deg, #1E293B, #0F172A)",
+        border: "1px solid rgba(196,168,119,0.2)", borderRadius: 20,
+        padding: 32, width: 580, maxHeight: "88vh", overflowY: "auto",
+      }}>
+        <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, marginTop: 0, marginBottom: 4, color: "#C4A877" }}>
+          Log New Complaint
+        </h2>
+        <p style={{ fontSize: 12, color: "#64748B", margin: "0 0 8px", lineHeight: 1.4 }}>
+          Fill in the details below. Fields marked with * are required.
+        </p>
+
+        {/* ── GUEST INFORMATION ── */}
+        <div style={sectionStyle}>Guest Information</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 8 }}>
+          <div>
+            <label style={labelStyle}>Guest Name *</label>
+            <input style={inputStyle} value={form.guestName} onChange={set("guestName")} placeholder="Full name" />
+          </div>
+          <div>
+            <label style={labelStyle}>Phone Number</label>
+            <input style={inputStyle} value={form.phone} onChange={set("phone")} placeholder="+44 7700 000000" />
+          </div>
+          <div>
+            <label style={labelStyle}>Email</label>
+            <input type="email" style={inputStyle} value={form.email} onChange={set("email")} placeholder="guest@email.com" />
+          </div>
+          <div>
+            <label style={labelStyle}>Source</label>
+            <input style={inputStyle} value={form.source} onChange={set("source")} placeholder="e.g. Booking.com, Walk-in, Airbnb" />
+          </div>
+        </div>
+
+        {/* ── STAY DETAILS ── */}
+        <div style={sectionStyle}>Stay Details</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 8 }}>
+          <div>
+            <label style={labelStyle}>Location / Property</label>
+            <input style={inputStyle} value={form.location} onChange={set("location")} placeholder="e.g. Azzurro Main" />
+          </div>
+          <div>
+            <label style={labelStyle}>Room & Bed No. *</label>
+            <input style={inputStyle} value={form.room} onChange={set("room")} placeholder="e.g. 204 - Bed A" />
+          </div>
+          <div>
+            <label style={labelStyle}>Check-in Date</label>
+            <input type="date" style={inputStyle} value={form.checkIn} onChange={set("checkIn")} />
+          </div>
+          <div>
+            <label style={labelStyle}>Check-out Date</label>
+            <input type="date" style={inputStyle} value={form.checkOut} onChange={set("checkOut")} />
+          </div>
+          <div>
+            <label style={labelStyle}>Are they still at the property?</label>
+            <select style={inputStyle} value={form.stillAtProperty} onChange={set("stillAtProperty")}>
+              <option value="">Select...</option>
+              <option value="Yes">Yes</option>
+              <option value="No">No</option>
+            </select>
+          </div>
+          <div>
+            <label style={labelStyle}>Did they use the bed?</label>
+            <select style={inputStyle} value={form.usedBed} onChange={set("usedBed")}>
+              <option value="">Select...</option>
+              <option value="Yes">Yes</option>
+              <option value="No">No</option>
+            </select>
+          </div>
+        </div>
+
+        {/* ── COMPLAINT DETAILS ── */}
+        <div style={sectionStyle}>Complaint Details</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 8 }}>
+          <div>
+            <label style={labelStyle}>Date of Complaint</label>
+            <input type="date" style={inputStyle} value={form.date} onChange={set("date")} />
+          </div>
+          <div>
+            <label style={labelStyle}>Complaint Type</label>
+            <select style={inputStyle} value={form.category} onChange={e => { setForm({ ...form, category: e.target.value, customCategory: "" }); }}>
+              {CATEGORIES.map(c => <option key={c}>{c}</option>)}
+            </select>
+            {form.category === "Custom Complaint" && (
+              <input style={{ ...inputStyle, marginTop: 8 }} value={form.customCategory} onChange={set("customCategory")} placeholder="Type your complaint category..." />
+            )}
+          </div>
+          <div>
+            <label style={labelStyle}>Sub Complaint Type</label>
+            <input style={inputStyle} value={form.subCategory} onChange={set("subCategory")} placeholder="e.g. Dirty towels, Broken lock" />
+          </div>
+          <div>
+            <label style={labelStyle}>Occurrence</label>
+            <select style={inputStyle} value={form.occurrence} onChange={set("occurrence")}>
+              <option value="">Select...</option>
+              <option value="First time">First time</option>
+              <option value="Recurring">Recurring</option>
+              <option value="Multiple times">Multiple times</option>
+            </select>
+          </div>
+          <div>
+            <label style={labelStyle}>Priority</label>
+            <select style={inputStyle} value={form.priority} onChange={set("priority")}>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
+          </div>
+          <div>
+            <label style={labelStyle}>Status</label>
+            <select style={inputStyle} value={form.status} onChange={set("status")}>
+              <option value="urgent">Not Actioned</option>
+              <option value="in_progress">In Progress</option>
+              <option value="pending_response">Pending Guest Response</option>
+              <option value="solved">Solved</option>
+            </select>
+          </div>
+        </div>
+
+        <div style={{ marginBottom: 14 }}>
+          <label style={labelStyle}>Complaint Description *</label>
+          <textarea style={{ ...inputStyle, minHeight: 80, resize: "vertical" }} value={form.description}
+            onChange={set("description")} placeholder="Describe the guest's complaint in detail..." />
+        </div>
+
+        {/* ── ACCOUNTABILITY & RESOLUTION ── */}
+        <div style={sectionStyle}>Accountability & Resolution</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 8 }}>
+          <div>
+            <label style={labelStyle}>Who is at fault?</label>
+            <input style={inputStyle} value={form.whoAtFault} onChange={set("whoAtFault")} placeholder="e.g. Housekeeping, Guest, Third-party" />
+          </div>
+          <div>
+            <label style={labelStyle}>Escalated By</label>
+            <input style={inputStyle} value={form.escalatedBy} onChange={set("escalatedBy")} placeholder="e.g. Front desk, Manager name" />
+          </div>
+          <div>
+            <label style={labelStyle}>Total Amount for Compensation</label>
+            <input style={inputStyle} value={form.totalAmount} onChange={set("totalAmount")} placeholder="e.g. £50 voucher" />
+          </div>
+        </div>
+
+        {/* ── FILES & MEDIA ── */}
+        <div style={sectionStyle}>Files & Media</div>
+        <div style={{
+          border: "1px dashed rgba(255,255,255,0.15)", borderRadius: 12,
+          padding: "20px 16px", textAlign: "center", marginBottom: 14,
+          background: "rgba(255,255,255,0.02)",
+        }}>
+          <div style={{ fontSize: 24, marginBottom: 6, opacity: 0.5 }}>📎</div>
+          <div style={{ fontSize: 12, color: "#64748B", lineHeight: 1.5 }}>
+            Attach photos, videos, or documents as evidence<br />
+            <span style={{ fontSize: 11, color: "#475569" }}>(Connect to Supabase Storage for file uploads)</span>
+          </div>
+        </div>
+
+        {/* ── NOTES ── */}
+        <div style={{ marginBottom: 28 }}>
+          <label style={labelStyle}>Initial Notes</label>
+          <textarea style={{ ...inputStyle, minHeight: 60, resize: "vertical" }} value={form.notes}
+            onChange={set("notes")} placeholder="Any initial observations or actions taken..." />
+        </div>
+
+        {/* ── ACTIONS ── */}
+        <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", position: "sticky", bottom: 0, background: "linear-gradient(to top, #0F172A 60%, transparent)", paddingTop: 12 }}>
+          <button onClick={onClose} style={{
+            padding: "10px 24px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.1)",
+            background: "transparent", color: "#94A3B8", fontSize: 13, cursor: "pointer",
+            fontFamily: "'DM Sans', sans-serif",
+          }}>Cancel</button>
+          <button onClick={handleSubmit} style={{
+            padding: "10px 24px", borderRadius: 10, border: "none",
+            background: "linear-gradient(135deg, #C4A877, #B89860)",
+            color: "#0F172A", fontSize: 13, fontWeight: 600, cursor: "pointer",
+            fontFamily: "'DM Sans', sans-serif",
+            boxShadow: "0 4px 15px rgba(196,168,119,0.3)",
+          }}>Log Complaint</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+function ComplaintDetail({ complaint, currentUser, onClose, onUpdate, onMove }) {
+  const [notes, setNotes] = useState(complaint.notes);
+  const [saving, setSaving] = useState(false);
+  const [activities, setActivities] = useState(complaint.activities || []);
+  const [newUpdate, setNewUpdate] = useState("");
+  const [newPhoto, setNewPhoto] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
+  const [mediaType, setMediaType] = useState(null); // "image" or "video"
+  const [posting, setPosting] = useState(false);
+  const [lightbox, setLightbox] = useState(null); // { src, type: "image"|"video" }
+  const fileInputRef = useRef(null);
+  const timelineEndRef = useRef(null);
+
+  const handleSave = () => {
+    setSaving(true);
+    onUpdate(complaint.id, { notes });
+    setTimeout(() => setSaving(false), 500);
+  };
+
+  const handlePhotoSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setNewPhoto(file);
+      const type = file.type.startsWith("video") ? "video" : "image";
+      setMediaType(type);
+      const reader = new FileReader();
+      reader.onload = (ev) => setPhotoPreview(ev.target.result);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removePhoto = () => { setNewPhoto(null); setPhotoPreview(null); setMediaType(null); if (fileInputRef.current) fileInputRef.current.value = ""; };
+
+  const handlePostUpdate = () => {
+    if (!newUpdate.trim() && !newPhoto) return;
+    setPosting(true);
+    const activity = {
+      id: `a${Date.now()}`,
+      author: currentUser.fullName,
+      role: currentUser.role === "manager" ? "Complaints Manager" : "Receptionist",
+      text: newUpdate.trim(),
+      photo: photoPreview,
+      mediaType: mediaType,
+      timestamp: new Date().toISOString(),
+    };
+    const updated = [...activities, activity];
+    setActivities(updated);
+    onUpdate(complaint.id, { activities: updated });
+    setNewUpdate("");
+    setNewPhoto(null);
+    setPhotoPreview(null);
+    setMediaType(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    setTimeout(() => { setPosting(false); timelineEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, 300);
+  };
+
+  const formatTimestamp = (ts) => {
+    const d = new Date(ts);
+    return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) + " at " + d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+  };
+
+  const detailLabelStyle = { fontSize: 10, fontWeight: 600, color: "#64748B", letterSpacing: 0.8, textTransform: "uppercase" };
+  const detailValueStyle = { fontSize: 13, color: "#CBD5E1", marginTop: 2 };
+  const sectionTitleStyle = { fontSize: 12, fontWeight: 700, color: "#C4A877", marginBottom: 10, marginTop: 20, paddingBottom: 6, borderBottom: "1px solid rgba(196,168,119,0.12)" };
+
+  const InfoRow = ({ label, value }) => (
+    <div style={{ marginBottom: 10 }}>
+      <div style={detailLabelStyle}>{label}</div>
+      <div style={detailValueStyle}>{value || <span style={{ color: "#475569", fontStyle: "italic" }}>Empty</span>}</div>
+    </div>
+  );
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)",
+      display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50,
+    }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{
+        background: "linear-gradient(145deg, #1E293B, #0F172A)",
+        border: "1px solid rgba(196,168,119,0.2)", borderRadius: 20,
+        padding: 32, width: 620, maxHeight: "90vh", overflowY: "auto",
+      }}>
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: 16 }}>
+          <div>
+            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, margin: 0, color: "#C4A877" }}>
+              {complaint.guestName}
+            </h2>
+            <p style={{ margin: "4px 0 0", fontSize: 13, color: "#94A3B8" }}>
+              Room {complaint.room} · {complaint.location || complaint.property || "—"} · {complaint.date}
+            </p>
+          </div>
+          <button onClick={onClose} style={{
+            background: "rgba(255,255,255,0.05)", border: "none", color: "#94A3B8",
+            width: 32, height: 32, borderRadius: 8, cursor: "pointer", fontSize: 18,
+          }}>×</button>
+        </div>
+
+        {/* Tags */}
+        <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+          <span style={{ padding: "4px 12px", borderRadius: 8, fontSize: 11, fontWeight: 600, background: "rgba(196,168,119,0.15)", color: "#C4A877" }}>{complaint.category}</span>
+          {complaint.subCategory && <span style={{ padding: "4px 12px", borderRadius: 8, fontSize: 11, fontWeight: 500, background: "rgba(196,168,119,0.08)", color: "#B89860" }}>{complaint.subCategory}</span>}
+          <span style={{
+            padding: "4px 12px", borderRadius: 8, fontSize: 11, fontWeight: 600, textTransform: "uppercase",
+            background: complaint.priority === "high" ? "#EF444420" : complaint.priority === "medium" ? "#F59E0B20" : "#3B82F620",
+            color: complaint.priority === "high" ? "#EF4444" : complaint.priority === "medium" ? "#F59E0B" : "#3B82F6",
+          }}>{complaint.priority} priority</span>
+          {complaint.occurrence && <span style={{ padding: "4px 12px", borderRadius: 8, fontSize: 11, fontWeight: 500, background: "rgba(255,255,255,0.05)", color: "#94A3B8" }}>{complaint.occurrence}</span>}
+        </div>
+
+        {/* Guest Info */}
+        <div style={sectionTitleStyle}>Guest Information</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4 }}>
+          <InfoRow label="Phone Number" value={complaint.phone} />
+          <InfoRow label="Email" value={complaint.email} />
+          <InfoRow label="Source" value={complaint.source} />
+        </div>
+
+        {/* Stay Details */}
+        <div style={sectionTitleStyle}>Stay Details</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4 }}>
+          <InfoRow label="Location" value={complaint.location || complaint.property} />
+          <InfoRow label="Room & Bed No." value={complaint.room} />
+          <InfoRow label="Check-in" value={complaint.checkIn} />
+          <InfoRow label="Check-out" value={complaint.checkOut} />
+          <InfoRow label="Still at Property?" value={complaint.stillAtProperty} />
+          <InfoRow label="Did they use the bed?" value={complaint.usedBed} />
+        </div>
+
+        {/* Complaint Details */}
+        <div style={sectionTitleStyle}>Complaint Details</div>
+        <div style={{ fontSize: 13, lineHeight: 1.6, color: "#CBD5E1", marginBottom: 12, padding: "10px 14px", background: "rgba(255,255,255,0.03)", borderRadius: 10, border: "1px solid rgba(255,255,255,0.06)" }}>
+          {complaint.description}
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4 }}>
+          <InfoRow label="Who is at fault?" value={complaint.whoAtFault} />
+          <InfoRow label="Escalated By" value={complaint.escalatedBy} />
+          <InfoRow label="Total Compensation Amount" value={complaint.totalAmount} />
+        </div>
+
+        {/* ═══ ACTIVITY TIMELINE ═══ */}
+        <div style={sectionTitleStyle}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span>Activity Timeline</span>
+            <span style={{ fontSize: 10, fontWeight: 500, color: "#64748B" }}>{activities.length} update{activities.length !== 1 ? "s" : ""}</span>
+          </div>
+        </div>
+
+        {/* Timeline entries */}
+        <div style={{ position: "relative", paddingLeft: 20, marginBottom: 16 }}>
+          {/* Vertical line */}
+          <div style={{ position: "absolute", left: 7, top: 4, bottom: 4, width: 2, background: "rgba(196,168,119,0.15)", borderRadius: 1 }} />
+
+          {activities.length === 0 && (
+            <div style={{ fontSize: 12, color: "#475569", fontStyle: "italic", padding: "12px 0 12px 8" }}>
+              No activity yet. Post your first update below.
+            </div>
+          )}
+
+          {activities.map((a, i) => (
+            <div key={a.id} style={{ position: "relative", marginBottom: i < activities.length - 1 ? 16 : 8, paddingLeft: 16 }}>
+              {/* Dot */}
+              <div style={{
+                position: "absolute", left: -16, top: 4, width: 12, height: 12,
+                borderRadius: "50%", border: "2px solid #C4A877",
+                background: i === activities.length - 1 ? "#C4A877" : "#0F172A",
+              }} />
+
+              {/* Card */}
+              <div style={{
+                background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
+                borderRadius: 12, padding: 14,
+              }}>
+                {/* Author line */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{
+                      width: 26, height: 26, borderRadius: "50%",
+                      background: a.role === "Complaints Manager" ? "linear-gradient(135deg, #C4A877, #E8D5B0)" : "linear-gradient(135deg, #638CFF, #8BAEFF)",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 10, fontWeight: 700, color: "#0F172A",
+                    }}>{a.author.split(" ").map(n => n[0]).join("")}</div>
+                    <div>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: "#E2E8F0" }}>{a.author}</span>
+                      <span style={{
+                        fontSize: 10, marginLeft: 6, padding: "1px 6px", borderRadius: 4,
+                        background: a.role === "Complaints Manager" ? "rgba(196,168,119,0.12)" : "rgba(99,140,255,0.12)",
+                        color: a.role === "Complaints Manager" ? "#C4A877" : "#638CFF",
+                      }}>{a.role}</span>
+                    </div>
+                  </div>
+                  <span style={{ fontSize: 10, color: "#64748B" }}>{formatTimestamp(a.timestamp)}</span>
+                </div>
+
+                {/* Update text */}
+                {a.text && <div style={{ fontSize: 13, lineHeight: 1.5, color: "#CBD5E1" }}>{a.text}</div>}
+
+                {/* Media */}
+                {a.photo && (
+                  <div style={{ marginTop: 8, cursor: "pointer" }} onClick={() => setLightbox({ src: a.photo, type: a.mediaType || "image" })}>
+                    {a.mediaType === "video" ? (
+                      <div style={{ position: "relative", display: "inline-block" }}>
+                        <video src={a.photo} style={{
+                          maxWidth: "100%", maxHeight: 220, borderRadius: 8,
+                          border: "1px solid rgba(255,255,255,0.1)",
+                        }} />
+                        <div style={{
+                          position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
+                          background: "rgba(0,0,0,0.3)", borderRadius: 8,
+                        }}>
+                          <div style={{
+                            width: 44, height: 44, borderRadius: "50%", background: "rgba(255,255,255,0.9)",
+                            display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20,
+                          }}>▶</div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ position: "relative", display: "inline-block" }}>
+                        <img src={a.photo} alt="Evidence" style={{
+                          maxWidth: "100%", maxHeight: 200, borderRadius: 8,
+                          border: "1px solid rgba(255,255,255,0.1)",
+                        }} />
+                        <div style={{
+                          position: "absolute", bottom: 6, right: 6, padding: "3px 8px", borderRadius: 6,
+                          background: "rgba(0,0,0,0.6)", fontSize: 10, color: "#E2E8F0",
+                        }}>Click to expand</div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+          <div ref={timelineEndRef} />
+        </div>
+
+        {/* ═══ ADD NEW UPDATE ═══ */}
+        <div style={{
+          background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
+          borderRadius: 14, padding: 16, marginBottom: 20,
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+            <div style={{
+              width: 28, height: 28, borderRadius: "50%",
+              background: currentUser.role === "manager" ? "linear-gradient(135deg, #C4A877, #E8D5B0)" : "linear-gradient(135deg, #638CFF, #8BAEFF)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 11, fontWeight: 700, color: "#0F172A",
+            }}>{currentUser.fullName.split(" ").map(n => n[0]).join("")}</div>
+            <span style={{ fontSize: 12, fontWeight: 600, color: "#E2E8F0" }}>{currentUser.fullName}</span>
+            <span style={{ fontSize: 10, color: "#64748B" }}>posting as {currentUser.role === "manager" ? "Complaints Manager" : "Receptionist"}</span>
+          </div>
+
+          <textarea
+            value={newUpdate}
+            onChange={e => setNewUpdate(e.target.value)}
+            placeholder="Write your update here... What happened? What action was taken?"
+            style={{
+              width: "100%", padding: "10px 14px", background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#E2E8F0",
+              fontSize: 13, outline: "none", fontFamily: "'DM Sans', sans-serif",
+              minHeight: 70, resize: "vertical", boxSizing: "border-box",
+            }}
+          />
+
+          {/* Media preview */}
+          {photoPreview && (
+            <div style={{ marginTop: 10, position: "relative", display: "inline-block" }}>
+              {mediaType === "video" ? (
+                <video src={photoPreview} controls style={{ maxWidth: 240, maxHeight: 160, borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)" }} />
+              ) : (
+                <img src={photoPreview} alt="Preview" style={{ maxWidth: 200, maxHeight: 140, borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)" }} />
+              )}
+              <button onClick={removePhoto} style={{
+                position: "absolute", top: -6, right: -6, width: 22, height: 22, borderRadius: "50%",
+                background: "#EF4444", border: "none", color: "#fff", fontSize: 12, cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>×</button>
+            </div>
+          )}
+
+          {/* Action buttons */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 10 }}>
+            <div>
+              <input type="file" ref={fileInputRef} accept="image/*,video/*" onChange={handlePhotoSelect} style={{ display: "none" }} />
+              <button onClick={() => fileInputRef.current?.click()} style={{
+                padding: "6px 14px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)",
+                background: "rgba(255,255,255,0.03)", color: "#94A3B8", fontSize: 12,
+                cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
+              }}>
+                📎 Attach Photo / Video
+              </button>
+            </div>
+            <button onClick={handlePostUpdate} disabled={posting || (!newUpdate.trim() && !newPhoto)} style={{
+              padding: "8px 20px", borderRadius: 8, border: "none",
+              background: (newUpdate.trim() || newPhoto) ? "linear-gradient(135deg, #C4A877, #B89860)" : "rgba(255,255,255,0.05)",
+              color: (newUpdate.trim() || newPhoto) ? "#0F172A" : "#475569",
+              fontSize: 12, fontWeight: 600, cursor: (newUpdate.trim() || newPhoto) ? "pointer" : "default",
+              transition: "all 0.2s",
+            }}>{posting ? "✓ Posted" : "Post Update"}</button>
+          </div>
+        </div>
+
+        {/* Move to */}
+        <div>
+          <label style={{ fontSize: 11, fontWeight: 600, color: "#64748B", letterSpacing: 1, textTransform: "uppercase", display: "block", marginBottom: 8 }}>Move to</label>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {COLUMNS.map(col => (
+              <button key={col.id} onClick={() => { onMove(complaint.id, col.id); onClose(); }}
+                style={{
+                  padding: "8px 16px", borderRadius: 8, fontSize: 12, fontWeight: 500, cursor: "pointer",
+                  background: complaint.status === col.id ? `${col.color}30` : "rgba(255,255,255,0.03)",
+                  border: `1px solid ${complaint.status === col.id ? col.color : "rgba(255,255,255,0.08)"}`,
+                  color: complaint.status === col.id ? col.color : "#94A3B8",
+                  transition: "all 0.2s",
+                }}>
+                {col.icon} {col.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ═══ LIGHTBOX MODAL ═══ */}
+      {lightbox && (
+        <div onClick={() => setLightbox(null)} style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.9)", backdropFilter: "blur(12px)",
+          display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200,
+          cursor: "zoom-out",
+        }}>
+          <button onClick={() => setLightbox(null)} style={{
+            position: "absolute", top: 20, right: 20, width: 40, height: 40,
+            borderRadius: "50%", background: "rgba(255,255,255,0.1)", border: "none",
+            color: "#fff", fontSize: 22, cursor: "pointer", zIndex: 201,
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>×</button>
+          <div onClick={e => e.stopPropagation()} style={{ maxWidth: "92vw", maxHeight: "90vh", cursor: "default" }}>
+            {lightbox.type === "video" ? (
+              <video src={lightbox.src} controls autoPlay style={{
+                maxWidth: "92vw", maxHeight: "88vh", borderRadius: 12,
+                boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
+              }} />
+            ) : (
+              <img src={lightbox.src} alt="Full size" style={{
+                maxWidth: "92vw", maxHeight: "88vh", borderRadius: 12,
+                objectFit: "contain",
+                boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
+              }} />
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+function ChatWidget({ isOpen, onToggle }) {
+  const [messages, setMessages] = useState([
+    {
+      role: "assistant",
+      content: "Hi there! 👋 I'm the Azzurro Complaint Assistant. I'm here to help you handle guest complaints step by step — from logging and validating to resolving them properly.\n\nWhat's the situation? Tell me about the complaint you're dealing with and I'll guide you through it.",
+    }
+  ]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  useEffect(() => {
+    if (isOpen) inputRef.current?.focus();
+  }, [isOpen]);
+
+  const sendMessage = useCallback(async () => {
+    if (!input.trim() || loading) return;
+    const userMsg = { role: "user", content: input.trim() };
+    const newMessages = [...messages, userMsg];
+    setMessages(newMessages);
+    setInput("");
+    setLoading(true);
+
+    try {
+      const apiMessages = newMessages.map(m => ({ role: m.role, content: m.content }));
+
+      // IMPORTANT: Never call Anthropic directly from the browser (CORS + API key exposure).
+      // Use Supabase Edge Function proxy instead.
+      const sb = window.__sb;
+      if (!sb || !sb.functions) throw new Error('Supabase client not ready');
+
+      const { data, error } = await sb.functions.invoke('anthropic-proxy', {
+        body: {
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          system: SYSTEM_PROMPT,
+          messages: apiMessages,
+        }
+      });
+
+      if (error) throw error;
+
+      // Expecting Anthropic-style response: { content: [{type:'text', text:'...'}] }
+      const blocks = data?.content || data?.message?.content || [];
+      const assistantText = Array.isArray(blocks)
+        ? blocks.map(b => b.type === 'text' ? b.text : '').filter(Boolean).join('\\n')
+        : (data?.text || data?.response || '');
+
+      const finalText = assistantText || "Sorry, I couldn't process that. Could you try again?";
+      setMessages(prev => [...prev, { role: 'assistant', content: finalText }]);
+    } catch (err) {
+      setMessages(prev => [...prev, { role: "assistant", content: "I'm having trouble connecting right now. Please try again in a moment." }]);
+    }
+    setLoading(false);
+  }, [input, messages, loading]);
+
+  if (!isOpen) {
+    return (
+      <button onClick={onToggle} style={{
+        position: "fixed", bottom: 24, right: 24, width: 60, height: 60,
+        borderRadius: "50%", border: "none", cursor: "pointer",
+        background: "linear-gradient(135deg, #C4A877, #B89860)",
+        boxShadow: "0 8px 30px rgba(196,168,119,0.4)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: 26, zIndex: 100, transition: "all 0.3s",
+      }}
+      onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.1)"; }}
+      onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; }}
+      >
+        💬
+      </button>
+    );
+  }
+
+  return (
+    <div style={{
+      position: "fixed", bottom: 24, right: 24, width: 400, height: 560,
+      background: "linear-gradient(145deg, #1E293B, #0F172A)",
+      border: "1px solid rgba(196,168,119,0.25)",
+      borderRadius: 20, display: "flex", flexDirection: "column",
+      boxShadow: "0 20px 60px rgba(0,0,0,0.5)", zIndex: 100,
+      overflow: "hidden",
+    }}>
+      {/* Chat Header */}
+      <div style={{
+        padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between",
+        background: "linear-gradient(135deg, rgba(196,168,119,0.1), rgba(196,168,119,0.05))",
+        borderBottom: "1px solid rgba(196,168,119,0.15)",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: "50%",
+            background: "linear-gradient(135deg, #C4A877, #E8D5B0)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 16,
+          }}>🤖</div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "#E2E8F0" }}>Complaint Assistant</div>
+            <div style={{ fontSize: 11, color: "#16A34A" }}>● Online</div>
+          </div>
+        </div>
+        <button onClick={onToggle} style={{
+          background: "rgba(255,255,255,0.05)", border: "none", color: "#94A3B8",
+          width: 32, height: 32, borderRadius: 8, cursor: "pointer", fontSize: 18,
+        }}>×</button>
+      </div>
+
+      {/* Messages */}
+      <div style={{
+        flex: 1, overflowY: "auto", padding: 16, display: "flex", flexDirection: "column", gap: 12,
+      }}>
+        {messages.map((msg, i) => (
+          <div key={i} style={{
+            display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start",
+          }}>
+            <div style={{
+              maxWidth: "85%", padding: "10px 14px", borderRadius: 14,
+              background: msg.role === "user"
+                ? "linear-gradient(135deg, #C4A877, #B89860)"
+                : "rgba(255,255,255,0.06)",
+              color: msg.role === "user" ? "#0F172A" : "#E2E8F0",
+              fontSize: 13, lineHeight: 1.6,
+              borderBottomRightRadius: msg.role === "user" ? 4 : 14,
+              borderBottomLeftRadius: msg.role === "user" ? 14 : 4,
+              whiteSpace: "pre-wrap",
+            }}>
+              {msg.content}
+            </div>
+          </div>
+        ))}
+        {loading && (
+          <div style={{ display: "flex", justifyContent: "flex-start" }}>
+            <div style={{
+              padding: "10px 18px", borderRadius: 14, borderBottomLeftRadius: 4,
+              background: "rgba(255,255,255,0.06)", color: "#94A3B8", fontSize: 13,
+            }}>
+              <span style={{ animation: "pulse 1.5s infinite" }}>Thinking...</span>
+            </div>
+          </div>
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Input */}
+      <div style={{
+        padding: "12px 16px",
+        borderTop: "1px solid rgba(255,255,255,0.06)",
+        display: "flex", gap: 8, alignItems: "center",
+      }}>
+        <input
+          ref={inputRef}
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && sendMessage()}
+          placeholder="Describe the complaint situation..."
+          style={{
+            flex: 1, padding: "10px 14px", background: "rgba(255,255,255,0.05)",
+            border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, color: "#E2E8F0",
+            fontSize: 13, outline: "none", fontFamily: "'DM Sans', sans-serif",
+          }}
+        />
+        <button onClick={sendMessage} disabled={loading || !input.trim()} style={{
+          width: 40, height: 40, borderRadius: 10, border: "none",
+          background: input.trim() ? "linear-gradient(135deg, #C4A877, #B89860)" : "rgba(255,255,255,0.05)",
+          color: input.trim() ? "#0F172A" : "#475569",
+          cursor: input.trim() ? "pointer" : "default",
+          display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18,
+          transition: "all 0.2s",
+        }}>
+          ➤
+        </button>
+      </div>
+
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 0.4; }
+          50% { opacity: 1; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+
+
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+</script>
+</body>
+</html>
