@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azzurro Hotels — Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'DM Sans',-apple-system,sans-serif;height:100vh;overflow:hidden}
+        body::before{content:'';position:fixed;inset:0;background:linear-gradient(to bottom,#87CEEB 0%,#4A9FBF 30%,#1E7491 60%,#0D5E7A 75%,#d4b896 90%,#c9a981 100%);z-index:-10}
+
+        /* AUTH */
+        #authScreen{position:fixed;inset:0;background:linear-gradient(145deg,#0B1120,#152238,#1A2A4A);display:flex;align-items:center;justify-content:center;z-index:100;color:#E2E8F0}
+        #authScreen.hidden{display:none}
+        .auth-box{width:440px;padding:40px 36px;background:linear-gradient(145deg,rgba(30,41,59,.95),rgba(15,23,42,.98));border:1px solid rgba(196,168,119,.2);border-radius:24px;box-shadow:0 32px 80px rgba(0,0,0,.5)}
+        .auth-logo{text-align:center;margin-bottom:32px}
+        .auth-logo-circle{width:68px;height:68px;border-radius:50%;margin:0 auto 14px;background:linear-gradient(135deg,#C4A877,#E8D5B0);display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:700;color:#0F172A;font-family:'Playfair Display',serif;box-shadow:0 8px 30px rgba(196,168,119,.3)}
+        .auth-logo h1{font-family:'Playfair Display',serif;font-size:28px;margin:0 0 4px;background:linear-gradient(135deg,#C4A877,#F0E1C4);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .auth-logo p{color:#64748B;letter-spacing:3px;font-size:10px;text-transform:uppercase}
+        .auth-tabs{display:flex;background:rgba(255,255,255,.04);border-radius:12px;padding:4px;margin-bottom:28px;border:1px solid rgba(255,255,255,.06)}
+        .auth-tabs button{flex:1;padding:10px 0;border-radius:9px;border:none;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit;background:transparent;color:#64748B;transition:.3s}
+        .auth-tabs button.active{background:linear-gradient(135deg,#C4A877,#B89860);color:#0F172A}
+        .auth-input{width:100%;padding:12px 16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:12px;color:#E2E8F0;font-size:14px;outline:none;font-family:inherit;box-sizing:border-box;margin-bottom:16px}
+        .auth-input:focus{border-color:rgba(196,168,119,.4)}
+        .auth-label{font-size:12px;font-weight:500;color:#94A3B8;margin-bottom:6px;display:block}
+        .auth-btn{width:100%;padding:14px 0;border-radius:12px;border:none;background:linear-gradient(135deg,#C4A877,#B89860);color:#0F172A;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 6px 20px rgba(196,168,119,.3);transition:.2s}
+        .auth-btn:hover{transform:translateY(-1px)}
+        .auth-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+        .auth-msg{padding:10px 14px;border-radius:10px;margin-bottom:16px;font-size:13px;display:none}
+        .auth-msg.err{display:block;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:#FCA5A5}
+        .auth-msg.ok{display:block;background:rgba(22,163,74,.1);border:1px solid rgba(22,163,74,.25);color:#86EFAC}
+        .signup-only{display:none}.signup-only.show{display:block}
+
+        /* LAYOUT */
+        #mainLayout{display:flex;height:100vh}
+        #mainLayout.hidden{display:none}
+        .sidebar{width:230px;min-width:230px;background:rgba(255,255,255,.12);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-right:1px solid rgba(255,255,255,.2);display:flex;flex-direction:column;z-index:10;position:relative}
+        .sb-hdr{padding:22px 18px 18px;border-bottom:1px solid rgba(255,255,255,.15)}
+        .sb-hdr h1{color:#fff;font-size:19px;font-weight:700;margin:0 0 2px;font-family:'Playfair Display',serif;text-shadow:0 2px 8px rgba(0,0,0,.2)}
+        .sb-hdr p{color:rgba(255,255,255,.7);font-size:11px;margin:0}
+        .sb-user{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:10px}
+        .sb-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#C4A877,#E8D5B0);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#0F172A;flex-shrink:0}
+        .sb-name{font-size:12px;font-weight:600;color:#fff}
+        .sb-role{font-size:10px;color:rgba(255,255,255,.5);text-transform:capitalize}
+        .sb-nav{padding:14px 12px;display:flex;flex-direction:column;gap:4px;flex:1;overflow-y:auto}
+        .sb-section{color:rgba(255,255,255,.45);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;padding:6px 12px 4px}
+        .nav-tab{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:10px;border:none;background:transparent;color:rgba(255,255,255,.7);font-size:13px;font-weight:600;cursor:pointer;transition:.2s;text-align:left;width:100%;position:relative}
+        .nav-tab.active{background:rgba(255,255,255,.22);color:#fff;box-shadow:0 4px 12px rgba(0,0,0,.15)}
+        .nav-tab.active::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:20px;background:#fff;border-radius:0 3px 3px 0}
+        .nav-tab:hover:not(.active){background:rgba(255,255,255,.08)}
+        .nav-icon{font-size:16px;width:22px;text-align:center}
+        .sb-foot{padding:12px 16px;border-top:1px solid rgba(255,255,255,.15)}
+        .sb-foot button{width:100%;padding:8px 0;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05);color:rgba(255,255,255,.6);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit}
+        .no-access{padding:20px 12px;color:rgba(255,255,255,.4);font-size:12px;text-align:center;line-height:1.6}
+        .main-content{flex:1;position:relative;overflow:hidden}
+        .dash-frame{width:100%;height:100%;border:none;position:absolute;top:0;left:0;display:none;background:#f1f5f9}
+        .dash-frame.active{display:block}
+    </style>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="authScreen">
+    <div class="auth-box">
+        <div class="auth-logo">
+            <div class="auth-logo-circle">A</div>
+            <h1>AZZURRO HOTELS</h1>
+            <p>Management System</p>
+        </div>
+        <div class="auth-tabs">
+            <button class="active" onclick="showMode('login')">Sign In</button>
+            <button onclick="showMode('signup')">Create Account</button>
+        </div>
+        <div id="authMsg" class="auth-msg"></div>
+        <div id="signupOnly" class="signup-only">
+            <label class="auth-label">Full Name</label>
+            <input class="auth-input" id="inName" placeholder="e.g. Sarah Mitchell">
+        </div>
+        <label class="auth-label">Email</label>
+        <input class="auth-input" type="email" id="inEmail" placeholder="you@azzurrohotel.com">
+        <label class="auth-label">Password</label>
+        <input class="auth-input" type="password" id="inPass" placeholder="Enter password">
+        <button class="auth-btn" id="authBtn" onclick="doAuth()">Sign In</button>
+        <p id="authHint" style="text-align:center;font-size:12px;color:#475569;margin-top:16px">
+            New staff? Click 'Create Account' — admin assigns your access.
+        </p>
+        <div id="notConfigured" style="display:none;margin-top:16px;padding:14px;border-radius:12px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:#FCA5A5;font-size:12px;line-height:1.6">
+            <strong>⚠️ Supabase not configured.</strong><br>
+            Open <code style="background:rgba(255,255,255,.1);padding:2px 6px;border-radius:4px">supabase-config.js</code> and paste your Project URL + anon key.
+        </div>
+    </div>
+</div>
+
+<!-- MAIN LAYOUT -->
+<div id="mainLayout" class="hidden">
+    <nav class="sidebar">
+        <div class="sb-hdr"><h1>🏨 Azzurro Hotels</h1><p>Management System</p></div>
+        <div class="sb-user">
+            <div class="sb-avatar" id="uAvatar">?</div>
+            <div><div class="sb-name" id="uName">Loading...</div><div class="sb-role" id="uRole">staff</div></div>
+        </div>
+        <div class="sb-nav">
+            <div class="sb-section">Dashboards</div>
+            <div id="navTabs"></div>
+            <div id="adminNav" style="display:none">
+                <div class="sb-section" style="margin-top:8px">Administration</div>
+                <button class="nav-tab" id="tab-admin" onclick="switchTo('admin')"><span class="nav-icon">⚙️</span> User Management</button>
+            </div>
+        </div>
+        <div class="sb-foot"><button onclick="doLogout()">Sign Out</button></div>
+    </nav>
+    <main class="main-content">
+        <iframe id="frame-maintenance" class="dash-frame" src="maintenance/index.html"></iframe>
+        <iframe id="frame-hr" class="dash-frame" src="hr/app.html"></iframe>
+        <iframe id="frame-complaints" class="dash-frame" src="complaints/index.html"></iframe>
+        <iframe id="frame-admin" class="dash-frame" src="admin.html"></iframe>
+    </main>
+</div>
+
+<script type="module">
+import { supabase, isConfigured } from './supabase-config.js';
+
+let profile = null, dashAccess = [], mode = 'login';
+
+// Check config
+if (!isConfigured()) {
+    document.getElementById('notConfigured').style.display = 'block';
+    document.getElementById('authBtn').disabled = true;
+}
+
+// Auth mode toggle
+window.showMode = function(m) {
+    mode = m;
+    document.querySelectorAll('.auth-tabs button').forEach((b,i) => b.classList.toggle('active', i===(m==='login'?0:1)));
+    document.getElementById('signupOnly').classList.toggle('show', m==='signup');
+    document.getElementById('authBtn').textContent = m==='login'?'Sign In':'Create Account';
+    document.getElementById('authHint').textContent = m==='login'
+        ? "New staff? Click 'Create Account' — admin assigns your access."
+        : "Already have an account? Click 'Sign In'.";
+    document.getElementById('authMsg').className = 'auth-msg';
+};
+
+function showMsg(text,type) { const el=document.getElementById('authMsg'); el.className='auth-msg '+type; el.textContent=text; }
+
+// Auth handler
+window.doAuth = async function() {
+    if (!isConfigured()) return;
+    const email = document.getElementById('inEmail').value.trim();
+    const pass = document.getElementById('inPass').value;
+    if (!email||!pass) { showMsg('Please fill in all fields.','err'); return; }
+
+    if (mode === 'signup') {
+        const name = document.getElementById('inName').value.trim();
+        if (!name) { showMsg('Please enter your full name.','err'); return; }
+        if (pass.length<6) { showMsg('Password: min 6 characters.','err'); return; }
+        const { error } = await supabase.auth.signUp({ email, password:pass, options:{data:{full_name:name}} });
+        if (error) { showMsg(error.message,'err'); return; }
+        showMsg('Account created! Admin will assign your dashboard access. Sign in now.','ok');
+        showMode('login');
+        return;
+    }
+
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password:pass });
+    if (error) { showMsg(error.message,'err'); return; }
+    await loadProfile(data.user);
+};
+
+document.getElementById('inPass').addEventListener('keydown', e => { if(e.key==='Enter') window.doAuth(); });
+
+// Load profile + access
+async function loadProfile(authUser) {
+    let { data:p } = await supabase.from('profiles').select('*').eq('id',authUser.id).single();
+    if (!p) {
+        const { data:np } = await supabase.from('profiles').upsert({
+            id:authUser.id, email:authUser.email,
+            full_name: authUser.user_metadata?.full_name || authUser.email.split('@')[0],
+            role:'staff'
+        }).select().single();
+        p = np;
+    }
+    if (!p) { showMsg('Error loading profile.','err'); return; }
+    profile = p;
+
+    const { data:access } = await supabase.from('dashboard_access').select('dashboard').eq('user_id',authUser.id);
+    dashAccess = (access||[]).map(a=>a.dashboard);
+    showMain(p, dashAccess, p.role==='admin');
+}
+
+// Show main layout
+function showMain(p, dashes, isAdmin) {
+    document.getElementById('authScreen').classList.add('hidden');
+    document.getElementById('mainLayout').classList.remove('hidden');
+
+    document.getElementById('uAvatar').textContent = p.full_name.split(' ').map(n=>n[0]).join('').toUpperCase();
+    document.getElementById('uName').textContent = p.full_name;
+    document.getElementById('uRole').textContent = p.role;
+
+    const all = [
+        {id:'maintenance',label:'Maintenance',icon:'🔧'},
+        {id:'hr',label:'HR Dashboard',icon:'👥'},
+        {id:'complaints',label:'Complaints',icon:'📋'},
+    ];
+
+    const nav = document.getElementById('navTabs');
+    nav.innerHTML = '';
+    const accessible = all.filter(d => isAdmin || dashes.includes(d.id));
+
+    if (!accessible.length && !isAdmin)
+        nav.innerHTML = '<div class="no-access">No dashboards assigned yet.<br>Contact an admin.</div>';
+
+    accessible.forEach(d => {
+        const b = document.createElement('button');
+        b.className = 'nav-tab'; b.id = 'tab-'+d.id;
+        b.onclick = () => switchTo(d.id);
+        b.innerHTML = `<span class="nav-icon">${d.icon}</span> ${d.label}`;
+        nav.appendChild(b);
+    });
+
+    document.getElementById('adminNav').style.display = isAdmin?'block':'none';
+    const first = accessible[0]?.id || (isAdmin?'admin':null);
+    if (first) switchTo(first);
+}
+
+// Switch dashboard
+window.switchTo = function(id) {
+    document.querySelectorAll('.dash-frame').forEach(f=>f.classList.remove('active'));
+    document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+    const frame = document.getElementById('frame-'+id);
+    const tab = document.getElementById('tab-'+id);
+    if(frame) frame.classList.add('active');
+    if(tab) tab.classList.add('active');
+};
+
+// Logout
+window.doLogout = async function() {
+    await supabase.auth.signOut();
+    profile = null; dashAccess = [];
+    document.getElementById('authScreen').classList.remove('hidden');
+    document.getElementById('mainLayout').classList.add('hidden');
+    document.getElementById('inPass').value = '';
+};
+
+// Auto-login if session exists
+const { data:{session} } = await supabase.auth.getSession();
+if (session?.user) await loadProfile(session.user);
+
+supabase.auth.onAuthStateChange((event) => {
+    if (event === 'SIGNED_OUT') {
+        document.getElementById('authScreen').classList.remove('hidden');
+        document.getElementById('mainLayout').classList.add('hidden');
+    }
+});
+</script>
+</body>
+</html>
