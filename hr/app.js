@@ -7,7 +7,7 @@
 //   B) Type the new update at the TOP and keep old history below -> it will timestamp just the new top part
 //   If user freely edits the log, we save exactly what they typed.
 
-import { supabase, isSupabaseConfigured } from "./supabase-config.js";
+import { supabase } from "./supabase-config.js";
 
 /* =========================
    DOM
