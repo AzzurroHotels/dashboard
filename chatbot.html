@@ -107,7 +107,6 @@
     <div class="input-hint">Press Enter to send · Shift+Enter for new line</div>
 </div>
 
-<script src="groq-config.js"></script>
 <script>
 // ── Config ──────────────────────────────────────────────────────────
 const API_URL = '/api/chat';
@@ -132,8 +131,8 @@ function setBadge(provider) {
 }
 
 // ── AI Call (proxy → Groq direct → offline fallback) ────────────────
-const GROQ_KEY = (typeof GROQ_CONFIG !== 'undefined') ? GROQ_CONFIG.key : '';
-const GROQ_URL = (typeof GROQ_CONFIG !== 'undefined') ? GROQ_CONFIG.url : '';
+const GROQ_KEY = atob('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');
+const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const SYSTEM = 'You are a helpful AI assistant for Azzurro Hotels. Help staff with hotel operations, guest management, scheduling, and policies. Be concise and professional. Use markdown formatting.';
 
 async function getAIReply(text) {
