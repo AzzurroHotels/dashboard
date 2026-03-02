@@ -1,0 +1,2162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Azzurro Hotels • Refund & Dispute Dashboard</title>
+
+  <!-- Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Chart.js (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <style>
+    :root{
+      /* Light finance theme */
+      --bg: #F5F7FB;
+      --panel: #FFFFFF;
+      --card: #FFFFFF;
+      --card2: #F8FAFC;
+      --stroke: rgba(15,23,42,.10);
+      --stroke2: rgba(15,23,42,.08);
+      --text: #0F172A;
+      --muted: #475569;
+
+      --green: #16A34A;
+      --sky: #0284C7;
+      --amber: #D97706;
+      --red: #DC2626;
+      --violet: #7C3AED;
+      --slate: #334155;
+
+      --shadow: 0 18px 45px rgba(2,6,23,.10);
+      --shadow2: 0 10px 30px rgba(2,6,23,.08);
+      --radius: 18px;
+      --radius2: 14px;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:
+        radial-gradient(900px 500px at 10% -10%, rgba(2,132,199,.14), transparent 55%),
+        radial-gradient(800px 520px at 90% 0%, rgba(22,163,74,.12), transparent 55%),
+        radial-gradient(900px 700px at 50% 110%, rgba(124,58,237,.10), transparent 55%),
+        var(--bg);
+      color:var(--text);
+      overflow-x:hidden;
+    }
+
+    .container{
+      max-width:1280px;
+      margin:0 auto;
+      padding:24px;
+    }
+
+    /* Top bar */
+    .topbar{
+      display:flex;
+      gap:16px;
+      align-items:flex-start;
+      justify-content:space-between;
+      padding:10px 0 18px;
+    }
+    .title{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    .brandline{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .logo{
+      width:34px; height:34px;
+      border-radius:12px;
+      background:
+        linear-gradient(135deg, rgba(22,163,74,.22), rgba(2,132,199,.18)),
+        #fff;
+      border:1px solid rgba(2,132,199,.22);
+      box-shadow: 0 12px 28px rgba(2,6,23,.10);
+      display:grid;
+      place-items:center;
+      font-weight:900;
+      color: #0F172A;
+      letter-spacing:-0.02em;
+      user-select:none;
+    }
+    .title h1{
+      margin:0;
+      font-size:22px;
+      letter-spacing:-0.02em;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .badge{
+      font-size:12px;
+      padding:6px 10px;
+      border:1px solid var(--stroke);
+      border-radius:999px;
+      background: rgba(255,255,255,.70);
+      color: var(--muted);
+      box-shadow: 0 6px 14px rgba(2,6,23,.05);
+      white-space:nowrap;
+    }
+    .subtitle{
+      margin:0;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.35;
+      max-width:740px;
+    }
+    .actions{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+    .btn{
+      appearance:none;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.85);
+      color:var(--text);
+      border-radius:12px;
+      padding:10px 12px;
+      font-size:13px;
+      font-weight:800;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      transition:.15s ease;
+      box-shadow: 0 10px 22px rgba(2,6,23,.06);
+    }
+    .btn:hover{transform:translateY(-1px); background:#fff}
+    .btn:active{transform:translateY(0px)}
+    .btn.primary{
+      background: linear-gradient(135deg, rgba(22,163,74,.16), rgba(2,132,199,.12));
+      border-color: rgba(2,132,199,.25);
+    }
+    .btn.danger{
+      background: rgba(220,38,38,.10);
+      border-color: rgba(220,38,38,.22);
+    }
+
+    /* Panels */
+    .panel{
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.70);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      backdrop-filter: blur(10px);
+    }
+    .panel-header{
+      padding:14px 16px;
+      border-bottom:1px solid var(--stroke);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.72));
+    }
+    .panel-header h2{
+      margin:0;
+      font-size:13px;
+      color:var(--muted);
+      font-weight:900;
+      letter-spacing:.02em;
+      text-transform:uppercase;
+    }
+    .panel-body{padding:14px 16px}
+
+    /* Filters */
+    .filters{
+      display:grid;
+      grid-template-columns: repeat(12, minmax(0,1fr));
+      gap:10px;
+    }
+    .field{grid-column: span 3}
+    .field.span-4{grid-column:span 4}
+    .field.span-6{grid-column:span 6}
+    .field.span-12{grid-column:span 12}
+
+    label{
+      display:block;
+      font-size:12px;
+      color:var(--muted);
+      margin-bottom:6px;
+      font-weight:800;
+    }
+    input, select{
+      width:100%;
+      padding:11px 12px;
+      border-radius:12px;
+      border:1px solid var(--stroke);
+      background: #fff;
+      color:var(--text);
+      outline:none;
+      transition:.15s ease;
+      font-size:13px;
+      box-shadow: 0 10px 22px rgba(2,6,23,.05);
+    }
+    input:focus, select:focus{
+      border-color: rgba(2,132,199,.35);
+      box-shadow: 0 0 0 4px rgba(2,132,199,.12);
+    }
+    .hint{
+      font-size:12px;
+      color:var(--muted);
+      margin-top:8px;
+    }
+
+    /* KPI cards */
+    .kpis{
+      display:grid;
+      grid-template-columns: repeat(12, minmax(0,1fr));
+      gap:12px;
+      padding:14px 16px 16px;
+    }
+    .kpi{
+      grid-column: span 3;
+      border:1px solid var(--stroke2);
+      border-radius: var(--radius2);
+      background: rgba(255,255,255,.92);
+      padding:14px 14px 12px;
+      position:relative;
+      overflow:hidden;
+      box-shadow: var(--shadow2);
+    }
+    .kpi::before{
+      content:"";
+      position:absolute; inset:-2px -2px auto -2px;
+      height:4px;
+      background:var(--sky);
+      opacity:.95;
+    }
+    .kpi.green::before{background:var(--green)}
+    .kpi.amber::before{background:var(--amber)}
+    .kpi.red::before{background:var(--red)}
+    .kpi.violet::before{background:var(--violet)}
+    .kpi.slate::before{background:var(--slate)}
+    .kpi .name{
+      color:var(--muted);
+      font-size:12px;
+      font-weight:900;
+      text-transform:uppercase;
+      letter-spacing:.03em;
+    }
+    .kpi .value{
+      margin-top:10px;
+      font-size:22px;
+      font-weight:900;
+      letter-spacing:-0.02em;
+    }
+    .kpi .meta{
+      margin-top:6px;
+      font-size:12px;
+      color:var(--muted);
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .dot{
+      width:8px; height:8px; border-radius:50%;
+      background:var(--sky);
+      display:inline-block;
+    }
+    .dot.green{background:var(--green)}
+    .dot.amber{background:var(--amber)}
+    .dot.red{background:var(--red)}
+    .dot.violet{background:var(--violet)}
+    .dot.slate{background:var(--slate)}
+
+    /* Charts */
+    .charts{
+      display:grid;
+      grid-template-columns:repeat(12,minmax(0,1fr));
+      gap:12px;
+      padding:0 16px 16px;
+    }
+    .chart-card{
+      grid-column:span 6;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.92);
+      border-radius: var(--radius2);
+      padding:12px;
+      min-height:320px;
+      box-shadow: var(--shadow2);
+    }
+    .chart-title{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:10px;
+      padding:6px 6px 0;
+    }
+    .chart-title h3{
+      margin:0;
+      font-size:13px;
+      color:var(--muted);
+      font-weight:900;
+      letter-spacing:.02em;
+      text-transform:uppercase;
+    }
+    .chart-wrap{height:260px; padding:6px}
+
+    /* Table */
+    .table-wrap{padding:0 16px 16px;}
+    table{
+      width:100%;
+      border-collapse:separate;
+      border-spacing:0;
+      overflow:hidden;
+      border:1px solid var(--stroke);
+      border-radius: var(--radius2);
+      background: rgba(255,255,255,.92);
+      box-shadow: var(--shadow2);
+    }
+    thead th{
+      text-align:left;
+      font-size:12px;
+      color:rgba(15,23,42,.92);
+      font-weight:900;
+      padding:12px 12px;
+      border-bottom:1px solid var(--stroke);
+      background: rgba(248,250,252,.95);
+      position:sticky; top:0;
+      z-index:1;
+      white-space:nowrap;
+    }
+    tbody td{
+      padding:12px 12px;
+      border-bottom:1px solid rgba(15,23,42,.06);
+      font-size:13px;
+      color:rgba(15,23,42,.92);
+      vertical-align:middle;
+    }
+    tbody tr:hover{background: rgba(2,132,199,.06); cursor:pointer;}
+    tbody tr:last-child td{border-bottom:none}
+
+    .chip{
+      display:inline-flex;
+      align-items:center;
+      gap:7px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid var(--stroke);
+      background: rgba(248,250,252,.95);
+      font-size:12px;
+      font-weight:900;
+      color:rgba(15,23,42,.92);
+      white-space:nowrap;
+    }
+    .chip .mini{width:7px; height:7px; border-radius:50%; background:var(--muted);}
+    .chip.requested .mini{background:var(--sky)}
+    .chip.approved .mini{background:var(--amber)}
+    .chip.rejected .mini{background:var(--red)}
+    .chip.paid .mini{background:var(--green)}
+
+    .money{font-variant-numeric: tabular-nums}
+    .muted{color:var(--muted)}
+    .nowrap{white-space:nowrap}
+    .right{text-align:right}
+
+    /* Drawer */
+    .backdrop{
+      position:fixed; inset:0;
+      background: rgba(2,6,23,.45);
+      backdrop-filter: blur(8px);
+      display:none;
+      z-index:50;
+    }
+    .drawer{
+      position:fixed; top:0; right:0;
+      width:min(560px, 92vw);
+      height:100%;
+      background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(248,250,252,.98));
+      border-left:1px solid var(--stroke);
+      box-shadow: var(--shadow);
+      transform: translateX(110%);
+      transition: .18s ease;
+      z-index:60;
+      display:flex;
+      flex-direction:column;
+    }
+    .drawer.open{transform:translateX(0)}
+    .backdrop.show{display:block}
+    .drawer-head{
+      padding:16px;
+      border-bottom:1px solid var(--stroke);
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+      background: rgba(255,255,255,.92);
+    }
+    .drawer-head h3{margin:0; font-size:16px; font-weight:900; letter-spacing:-0.02em;}
+    .drawer-head p{margin:6px 0 0; font-size:12px; color:var(--muted); line-height:1.35;}
+    .drawer-body{padding:14px 16px; overflow:auto; display:grid; gap:10px;}
+    .kv{
+      border:1px solid var(--stroke);
+      border-radius:14px;
+      padding:12px;
+      background: rgba(255,255,255,.92);
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      box-shadow: 0 10px 22px rgba(2,6,23,.05);
+    }
+    .kv .k{font-size:12px; color:var(--muted); font-weight:900; text-transform:uppercase; letter-spacing:.03em;}
+    .kv .v{font-size:13px; font-weight:900; text-align:right; max-width:65%; word-break:break-word;}
+    .drawer-actions{
+      margin-top:auto;
+      padding:14px 16px;
+      border-top:1px solid var(--stroke);
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+      background: rgba(248,250,252,.95);
+    }
+
+    /* Responsive */
+    @media (max-width: 980px){
+      .kpi{grid-column:span 6}
+      .chart-card{grid-column:span 12}
+      .field{grid-column:span 6}
+      .field.span-4{grid-column:span 6}
+      .field.span-6{grid-column:span 12}
+    }
+    @media (max-width: 560px){
+      .kpi{grid-column:span 12}
+      .field{grid-column:span 12}
+      .actions{justify-content:flex-start}
+    }
+
+    /* Updates / activity log */
+    .updates-box{
+      border:1px solid var(--stroke);
+      border-radius:14px;
+      padding:12px;
+      background: rgba(255,255,255,.92);
+      box-shadow: 0 10px 22px rgba(2,6,23,.05);
+    }
+    .updates-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:10px;
+    }
+    .updates-head .t{
+      font-size:12px;
+      font-weight:900;
+      letter-spacing:.03em;
+      text-transform:uppercase;
+      color:var(--muted);
+    }
+    .updates-form{
+      display:grid;
+      gap:10px;
+      margin-bottom:12px;
+    }
+    .updates-form textarea{
+      width:100%;
+      min-height:90px;
+      resize:vertical;
+      padding:11px 12px;
+      border-radius:12px;
+      border:1px solid var(--stroke);
+      background:#fff;
+      color:var(--text);
+      outline:none;
+      font-size:13px;
+      box-shadow: 0 10px 22px rgba(2,6,23,.05);
+    }
+    .updates-form textarea:focus{
+      border-color: rgba(2,132,199,.35);
+      box-shadow: 0 0 0 4px rgba(2,132,199,.12);
+    }
+    .updates-row{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+    }
+    .updates-list{
+      display:grid;
+      gap:10px;
+    }
+    .update-item{
+      border:1px solid rgba(15,23,42,.10);
+      border-radius:14px;
+      background: rgba(248,250,252,.88);
+      padding:12px;
+    }
+    .update-top{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:8px;
+    }
+    .update-meta{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+    .update-meta .when{
+      font-size:12px;
+      font-weight:900;
+      color:rgba(15,23,42,.90);
+    }
+    .update-meta .sub{
+      font-size:12px;
+      color:var(--muted);
+    }
+    .update-text{
+      font-size:13px;
+      color:rgba(15,23,42,.92);
+      line-height:1.4;
+      white-space:pre-wrap;
+    }
+    .update-photos{
+      margin-top:10px;
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap:10px;
+    }
+    @media (max-width: 520px){
+      .update-photos{grid-template-columns: repeat(2, minmax(0, 1fr));}
+    }
+    .u-thumb{
+      border:1px solid var(--stroke);
+      border-radius:14px;
+      overflow:hidden;
+      background:#fff;
+      box-shadow: 0 10px 22px rgba(2,6,23,.05);
+    }
+    .u-thumb img{
+      width:100%;
+      height:110px;
+      object-fit:cover;
+      display:block;
+    }
+    .u-thumb .cap{
+      padding:8px 10px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:6px;
+      font-size:12px;
+      font-weight:800;
+    }
+
+    /* Attachments */
+    .attach-box{
+      border:1px dashed rgba(15,23,42,.22);
+      border-radius:14px;
+      padding:12px;
+      background: rgba(248,250,252,.90);
+      box-shadow: 0 10px 22px rgba(2,6,23,.04);
+    }
+    .attach-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:10px;
+    }
+    .attach-head .t{
+      font-size:12px;
+      font-weight:900;
+      letter-spacing:.03em;
+      text-transform:uppercase;
+      color:var(--muted);
+    }
+    .attach-grid{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap:10px;
+    }
+    @media (max-width: 520px){
+      .attach-grid{grid-template-columns: repeat(2, minmax(0, 1fr));}
+    }
+    .thumb{
+      border:1px solid var(--stroke);
+      border-radius:14px;
+      overflow:hidden;
+      background:#fff;
+      box-shadow: 0 10px 22px rgba(2,6,23,.05);
+      display:flex;
+      flex-direction:column;
+    }
+    .thumb img{
+      width:100%;
+      height:110px;
+      object-fit:cover;
+      display:block;
+      background: rgba(15,23,42,.04);
+    }
+    .thumb .cap{
+      padding:10px 10px 10px;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    .thumb .name{
+      font-size:12px;
+      font-weight:800;
+      color:rgba(15,23,42,.92);
+      line-height:1.2;
+      word-break:break-word;
+    }
+    .thumb .actions{
+      display:flex;
+      gap:6px;
+      justify-content:flex-end;
+      flex-wrap:wrap;
+    }
+    .mini-btn{
+      appearance:none;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.92);
+      border-radius:10px;
+      padding:7px 9px;
+      font-size:12px;
+      font-weight:900;
+      cursor:pointer;
+      transition:.12s ease;
+    }
+    .mini-btn:hover{transform:translateY(-1px); background:#fff}
+    .mini-btn.danger{
+      background: rgba(220,38,38,.10);
+      border-color: rgba(220,38,38,.20);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="topbar">
+      <div class="title">
+        <div class="brandline">
+          <div class="logo" title="Azzurro Hotels">AH</div>
+          <h1>
+            Azzurro Hotels • Refund & Dispute Dashboard
+            <span class="badge" id="rangeBadge">Last 90 days</span>
+          </h1>
+        </div>
+        <p class="subtitle">
+          Multi-property view for a Sydney hotel group. Track refunds & disputes by property, booking source, cause, and department owner.
+          All dates follow <strong>Australia/Sydney</strong> timezone and values shown in <strong>AUD</strong>.
+        </p>
+      </div>
+
+      <div class="actions">
+        
+        <button class="btn" id="btnExport" title="Export current view as CSV">⬇️ Export CSV</button>
+        
+        <button class="btn primary" id="btnNew" title="Add a new request">➕ New Refund</button>
+      </div>
+    </div>
+
+    <!-- Filters Panel -->
+    <div class="panel">
+      <div class="panel-header">
+        <h2>Filters</h2>
+        <div class="badge" id="resultBadge">0 results</div>
+      </div>
+
+      <div class="panel-body">
+        <div class="filters">
+          <div class="field span-4">
+            <label>Search (Refund ID / Guest / Booking ID / Property)</label>
+            <input id="fSearch" placeholder="e.g., R-10421, Smith, BDC-223901, Town Hall..." />
+          </div>
+
+          <div class="field">
+            <label>Property</label>
+            <select id="fProperty">
+              <option value="">All</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Booking Source</label>
+            <select id="fSource">
+              <option value="">All</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Status</label>
+            <select id="fStatus">
+              <option value="">All</option>
+              <option>Requested</option>
+              <option>Approved</option>
+              <option>Rejected</option>
+              <option>Paid</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Cause</label>
+            <select id="fCause">
+              <option value="">All</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Department Owner</label>
+            <select id="fDept">
+              <option value="">All</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Date range</label>
+            <select id="fRange">
+              <option value="30">Last 30 days</option>
+              <option value="60">Last 60 days</option>
+              <option value="90" selected>Last 90 days</option>
+              <option value="365">Last 12 months</option>
+              <option value="all">All time</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Min amount (AUD)</label>
+            <input id="fMin" type="number" min="0" step="0.01" placeholder="0.00" />
+          </div>
+
+          <div class="field">
+            <label>Max amount (AUD)</label>
+            <input id="fMax" type="number" min="0" step="0.01" placeholder="99999.00" />
+          </div>
+        </div>
+
+        <div class="hint">
+          Tip: Click a row to open details. Data saves locally in your browser (localStorage).
+        </div>
+      </div>
+
+      <!-- KPI Cards -->
+      <div class="kpis">
+        <div class="kpi">
+          <div class="name">Total Requests</div>
+          <div class="value" id="kTotal">0</div>
+          <div class="meta"><span class="dot"></span><span id="kTotalMeta">Filtered view</span></div>
+        </div>
+
+        <div class="kpi green">
+          <div class="name">Gross Amount (AUD)</div>
+          <div class="value money" id="kGross">$0.00</div>
+          <div class="meta"><span class="dot green"></span><span>Sum of requested amounts</span></div>
+        </div>
+
+        <div class="kpi red">
+          <div class="name">Fees (AUD)</div>
+          <div class="value money" id="kFees">$0.00</div>
+          <div class="meta"><span class="dot red"></span><span>Card / platform fees</span></div>
+        </div>
+
+        <div class="kpi violet">
+          <div class="name">Net Refund (AUD)</div>
+          <div class="value money" id="kNet">$0.00</div>
+          <div class="meta"><span class="dot violet"></span><span>Amount minus fees</span></div>
+        </div>
+
+        <div class="kpi amber">
+          <div class="name">Paid Rate</div>
+          <div class="value" id="kPaidRate">0.0%</div>
+          <div class="meta"><span class="dot amber"></span><span>Paid / total requests</span></div>
+        </div>
+
+        <div class="kpi">
+          <div class="name">Avg Days to Resolve</div>
+          <div class="value" id="kAvgDays">0.0</div>
+          <div class="meta"><span class="dot"></span><span>Excludes “Requested”</span></div>
+        </div>
+
+        <div class="kpi green">
+          <div class="name">Paid Amount (Net)</div>
+          <div class="value money" id="kPaidAmt">$0.00</div>
+          <div class="meta"><span class="dot green"></span><span>Net where status = Paid</span></div>
+        </div>
+
+        <div class="kpi slate">
+          <div class="name">Platform-Fault %</div>
+          <div class="value" id="kPlatformFault">0.0%</div>
+          <div class="meta"><span class="dot slate"></span><span>Cause = Platform error</span></div>
+        </div>
+      </div>
+
+      <!-- Charts -->
+      <div class="charts">
+        <div class="chart-card">
+          <div class="chart-title">
+            <h3>Weekly Requests</h3>
+            <span class="badge">Last 12 weeks</span>
+          </div>
+          <div class="chart-wrap"><canvas id="cWeekly"></canvas></div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-title">
+            <h3>Status Breakdown</h3>
+            <span class="badge">Count & Net</span>
+          </div>
+          <div class="chart-wrap"><canvas id="cStatus"></canvas></div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-title">
+            <h3>Net Refund by Property</h3>
+            <span class="badge">Net (AUD)</span>
+          </div>
+          <div class="chart-wrap"><canvas id="cProperties"></canvas></div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-title">
+            <h3>Booking Source (Net)</h3>
+            <span class="badge">Net (AUD)</span>
+          </div>
+          <div class="chart-wrap"><canvas id="cSources"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="table-wrap">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin: 0 0 10px;">
+          <div class="badge">Table (click a row for details)</div>
+          <div class="badge" id="lastUpdated">Updated: —</div>
+        </div>
+
+        <div style="max-height: 440px; overflow:auto; border-radius: var(--radius2);">
+          <table>
+            <thead>
+              <tr>
+                <th>Refund ID</th>
+                <th>Request Date</th>
+                <th>Property</th>
+                <th>Guest</th>
+                <th>Booking Source</th>
+                <th>Booking ID</th>
+                <th>Cause</th>
+                <th>Dept Owner</th>
+                <th>Status</th>
+                <th class="right">Amount</th>
+                <th class="right">Fees</th>
+                <th class="right">Net</th>
+                <th class="right">Days</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Drawer -->
+  <div class="backdrop" id="backdrop"></div>
+  <aside class="drawer" id="drawer">
+    <div class="drawer-head">
+      <div>
+        <h3 id="dTitle">Refund Details</h3>
+        <p id="dSub">—</p>
+      </div>
+      <button class="btn" id="btnClose">✕ Close</button>
+    </div>
+
+    <div class="drawer-body" id="drawerBody"></div>
+
+    <div class="drawer-actions">
+      <button class="btn" id="btnMarkApproved">✅ Mark Approved</button>
+      <button class="btn" id="btnMarkRejected">⛔ Mark Rejected</button>
+      <button class="btn primary" id="btnMarkPaid">💸 Mark Paid</button>
+    </div>
+  </aside>
+
+  <!-- Modal -->
+  <div class="backdrop" id="modalBackdrop" style="display:none;"></div>
+  <div id="modal" style="position:fixed; inset:0; display:none; z-index:80; align-items:center; justify-content:center; padding:18px;">
+    <div class="panel" style="width:min(820px, 96vw);">
+      <div class="panel-header">
+        <h2>New Refund / Dispute</h2>
+        <button class="btn" id="btnModalClose">✕ Close</button>
+      </div>
+      <div class="panel-body">
+        <div class="filters">
+          <div class="field span-4">
+            <label>Property</label>
+            <select id="nProperty"></select>
+          </div>
+
+          <div class="field span-4">
+            <label>Guest Name</label>
+            <input id="nGuest" placeholder="e.g., John Smith" />
+          </div>
+
+          <div class="field span-4">
+            <label>Booking Source</label>
+            <select id="nSource"></select>
+          </div>
+
+          <div class="field span-4">
+            <label>Booking ID</label>
+            <input id="nBookingId" placeholder="e.g., BDC-238112 / EXP-99102" />
+          </div>
+
+          <div class="field span-4">
+            <label>Cause</label>
+            <select id="nCause"></select>
+          </div>
+
+          <div class="field span-4">
+            <label>Department Owner</label>
+            <select id="nDept"></select>
+          </div>
+
+          <div class="field span-4">
+            <label>Status</label>
+            <select id="nStatus">
+              <option>Requested</option><option>Approved</option><option>Rejected</option><option>Paid</option>
+            </select>
+          </div>
+
+          <div class="field span-4">
+            <label>Amount (AUD)</label>
+            <input id="nAmount" type="number" step="0.01" min="0" placeholder="e.g., 129.99" />
+          </div>
+
+          <div class="field span-4">
+            <label>Fees (AUD)</label>
+            <input id="nFees" type="number" step="0.01" min="0" placeholder="e.g., 3.25" />
+          </div>
+
+          <div class="field span-6">
+            <label>Request Date (Australia/Sydney)</label>
+            <input id="nDate" type="date" />
+          </div>
+
+          <div class="field span-6">
+            <label>Days to Resolve</label>
+            <input id="nDays" type="number" step="1" min="0" placeholder="e.g., 4" />
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:14px;">
+          <button class="btn" id="btnModalCancel">Cancel</button>
+          <button class="btn primary" id="btnModalSave">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /***********************
+     * Azzurro Hotels config
+     ***********************/
+    const TZ = "Australia/Sydney";
+    const CURRENCY = "AUD";
+
+    // You can rename these anytime:
+    const PROPERTIES = [
+      "Potts Point",
+      "Central Sydney",
+      "Surry Hills",
+      "Darling Harbour",
+      "The Pyrmont Budget Hotel",
+      "Olympic Hotel"
+    ];
+
+    const SOURCES = [
+      "Booking.com",
+      "Expedia",
+      "Agoda",
+      "Direct",
+      "Walk-in"
+    ];
+
+    const CAUSES = [
+      "Platform error",
+      "Overbooking",
+      "Payment issue",
+      "Policy exception",
+      "Guest complaint",
+      "Ops error",
+      "Other"
+    ];
+
+    const DEPARTMENTS = [
+      "Finance",
+      "Complaints",
+      "Reception",
+      "Operations"
+    ];
+
+    const STATUSES = ["Requested","Approved","Rejected","Paid"];
+
+    /***********************
+     * Utilities
+     ***********************/
+    const $ = (id) => document.getElementById(id);
+    const fmtMoney = (n) => "$" + (Number(n || 0)).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) + " AUD";
+    const fmtPct = (n) => `${(n*100).toFixed(1)}%`;
+    const pad2 = (n) => String(n).padStart(2,"0");
+
+    function sydneyNow(){
+      // Convert "now" into Australia/Sydney date parts reliably (no external libs)
+      const parts = new Intl.DateTimeFormat("en-AU", {
+        timeZone: TZ,
+        year:"numeric", month:"2-digit", day:"2-digit"
+      }).formatToParts(new Date());
+      const get = (t) => parts.find(p=>p.type===t)?.value;
+      return { y:+get("year"), m:+get("month"), d:+get("day") };
+    }
+
+    function todayISO(){
+      const {y,m,d} = sydneyNow();
+      return `${y}-${pad2(m)}-${pad2(d)}`;
+    }
+
+    function parseDate(s){
+      const d = new Date(s+"T00:00:00");
+      return isNaN(d) ? null : d;
+    }
+
+    function daysBetween(a,b){
+      const ms = Math.abs(b - a);
+      return Math.round(ms / (1000*60*60*24));
+    }
+
+    function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
+
+    function startOfWeek(d){
+      // Monday start (based on local Date object; okay for weekly grouping visuals)
+      const x = new Date(d);
+      const day = (x.getDay() + 6) % 7; // Mon=0
+      x.setDate(x.getDate() - day);
+      x.setHours(0,0,0,0);
+      return x;
+    }
+
+    function addDays(d, n){
+      const x = new Date(d);
+      x.setDate(x.getDate() + n);
+      return x;
+    }
+
+    function toISODate(d){
+      return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+    }
+
+    function escapeHtml(s){
+      return String(s ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    /***********************
+     * Data model
+     ***********************/
+    const LS_KEY = "azzurro_refund_dashboard_v1";
+
+    // Record:
+    // {
+    //   id, requestDate, property, guest, source, bookingId,
+    //   cause, deptOwner, status, amount, fees, daysToResolve
+    // }
+
+    function loadData(){
+      const raw = localStorage.getItem(LS_KEY);
+      if(!raw) return [];
+      try{
+        const arr = JSON.parse(raw);
+        if(!Array.isArray(arr)) return [];
+        return arr;
+      }catch(e){ return []; }
+    }
+
+    function saveData(arr){
+      localStorage.setItem(LS_KEY, JSON.stringify(arr));
+      $("lastUpdated").textContent = "Updated: " + new Date().toLocaleString("en-AU", { timeZone: TZ });
+    }
+
+    function genId(existing){
+      let n = 10000 + Math.floor(Math.random()*89999);
+      let id = `R-${n}`;
+      const set = new Set(existing.map(x=>x.id));
+      while(set.has(id)){
+        n = 10000 + Math.floor(Math.random()*89999);
+        id = `R-${n}`;
+      }
+      return id;
+    }
+
+    function weightedPick(weights){
+      const r = Math.random();
+      let acc = 0;
+      for(let i=0;i<weights.length;i++){
+        acc += weights[i];
+        if(r <= acc) return i;
+      }
+      return weights.length-1;
+    }
+
+    /***********************
+     * Filters + metrics
+     ***********************/
+    function getFilters(){
+      return {
+        q: $("fSearch").value.trim().toLowerCase(),
+        property: $("fProperty").value.trim(),
+        source: $("fSource").value.trim(),
+        status: $("fStatus").value.trim(),
+        cause: $("fCause").value.trim(),
+        dept: $("fDept").value.trim(),
+        range: $("fRange").value,
+        min: $("fMin").value ? +$("fMin").value : null,
+        max: $("fMax").value ? +$("fMax").value : null,
+      };
+    }
+
+    function applyFilters(data, f){
+      const now = new Date();
+      let minDate = null;
+      if(f.range !== "all"){
+        const days = +f.range;
+        minDate = new Date(now);
+        minDate.setDate(now.getDate() - (days-1));
+        minDate.setHours(0,0,0,0);
+      }
+
+      return data.filter(r=>{
+        if(minDate){
+          const d = parseDate(r.requestDate);
+          if(!d || d < minDate) return false;
+        }
+
+        if(f.q){
+          const hay = `${r.id} ${r.guest} ${r.bookingId} ${r.property} ${r.source}`.toLowerCase();
+          if(!hay.includes(f.q)) return false;
+        }
+
+        if(f.property && r.property !== f.property) return false;
+        if(f.source && r.source !== f.source) return false;
+        if(f.status && r.status !== f.status) return false;
+        if(f.cause && r.cause !== f.cause) return false;
+        if(f.dept && r.deptOwner !== f.dept) return false;
+
+        if(f.min !== null && r.amount < f.min) return false;
+        if(f.max !== null && r.amount > f.max) return false;
+
+        return true;
+      });
+    }
+
+    function calcKPIs(view){
+      const total = view.length;
+      const gross = view.reduce((a,r)=>a + (r.amount||0), 0);
+      const fees = view.reduce((a,r)=>a + (r.fees||0), 0);
+      const net = view.reduce((a,r)=>a + ((r.amount||0)-(r.fees||0)), 0);
+
+      const paidCount = view.filter(r=>r.status==="Paid").length;
+      const paidRate = total ? paidCount/total : 0;
+
+      const resolved = view.filter(r=>r.status!=="Requested");
+      const avgDays = resolved.length ? (resolved.reduce((a,r)=>a + (r.daysToResolve||0),0)/resolved.length) : 0;
+
+      const paidAmt = view
+        .filter(r=>r.status==="Paid")
+        .reduce((a,r)=>a + ((r.amount||0)-(r.fees||0)), 0);
+
+      const platformFault = view.filter(r=>r.cause==="Platform error").length;
+      const platformFaultPct = total ? platformFault/total : 0;
+
+      return { total, gross, fees, net, paidRate, avgDays, paidAmt, platformFaultPct };
+    }
+
+    function groupNet(view, key){
+      const m = new Map();
+      for(const r of view){
+        const k = r[key] ?? "Unknown";
+        const net = (r.amount||0) - (r.fees||0);
+        m.set(k, (m.get(k)||0) + net);
+      }
+      return m;
+    }
+
+    function weeklySeries(view, weeks=12){
+      const now = new Date();
+      const thisMon = startOfWeek(now);
+      const starts = [];
+      for(let i=weeks-1;i>=0;i--){
+        const s = addDays(thisMon, -7*i);
+        starts.push(s);
+      }
+
+      const labels = starts.map(d=>{
+        const mm = pad2(d.getMonth()+1);
+        const dd = pad2(d.getDate());
+        return `${mm}/${dd}`;
+      });
+
+      const counts = new Array(weeks).fill(0);
+      for(const r of view){
+        const d = parseDate(r.requestDate);
+        if(!d) continue;
+        for(let i=0;i<starts.length;i++){
+          const s = starts[i];
+          const e = addDays(s, 7);
+          if(d >= s && d < e){
+            counts[i] += 1;
+            break;
+          }
+        }
+      }
+      return { labels, counts };
+    }
+
+    /***********************
+     * Rendering
+     ***********************/
+    let DATA = loadData();
+    let VIEW = [];
+    let selectedId = null;
+
+    let chartWeekly = null;
+    let chartStatus = null;
+    let chartProperties = null;
+    let chartSources = null;
+
+    const statusClass = (s) => {
+      const x = (s||"").toLowerCase();
+      if(x==="requested") return "requested";
+      if(x==="approved") return "approved";
+      if(x==="rejected") return "rejected";
+      if(x==="paid") return "paid";
+      return "";
+    };
+
+    function fillSelect(id, items){
+      const el = $(id);
+      if(!el) return;
+      const keepAll = el.querySelector('option[value=""]') ? true : false;
+      const current = el.value;
+      el.innerHTML = keepAll ? '<option value="">All</option>' : "";
+      for(const it of items){
+        const o = document.createElement("option");
+        o.textContent = it;
+        o.value = it;
+        el.appendChild(o);
+      }
+      // restore if possible
+      if(current && items.includes(current)) el.value = current;
+    }
+
+    function fillModalSelect(id, items){
+      const el = $(id);
+      if(!el) return;
+      el.innerHTML = "";
+      for(const it of items){
+        const o = document.createElement("option");
+        o.textContent = it;
+        o.value = it;
+        el.appendChild(o);
+      }
+    }
+
+    function renderAll(){
+      const f = getFilters();
+      VIEW = applyFilters(DATA, f);
+
+      const rangeText = (f.range==="all") ? "All time" : `Last ${f.range} days`;
+      $("rangeBadge").textContent = rangeText;
+      $("resultBadge").textContent = `${VIEW.length} results`;
+
+      const k = calcKPIs(VIEW);
+      $("kTotal").textContent = k.total.toLocaleString();
+      $("kGross").textContent = fmtMoney(k.gross);
+      $("kFees").textContent = fmtMoney(k.fees);
+      $("kNet").textContent = fmtMoney(k.net);
+      $("kPaidRate").textContent = fmtPct(k.paidRate);
+      $("kAvgDays").textContent = k.avgDays.toFixed(1);
+      $("kPaidAmt").textContent = fmtMoney(k.paidAmt);
+      $("kPlatformFault").textContent = fmtPct(k.platformFaultPct);
+      $("kTotalMeta").textContent = `Filtered view (${rangeText})`;
+
+      renderTable(VIEW);
+      renderCharts(VIEW);
+    }
+
+    function renderTable(view){
+      const tbody = $("tbody");
+      tbody.innerHTML = "";
+
+      const sorted = [...view].sort((a,b)=> (b.requestDate||"").localeCompare(a.requestDate||""));
+
+      for(const r of sorted){
+        const tr = document.createElement("tr");
+        tr.addEventListener("click", ()=> openDrawer(r.id));
+
+        const net = (r.amount||0) - (r.fees||0);
+
+        tr.innerHTML = `
+          <td><strong>${escapeHtml(r.id)}</strong></td>
+          <td class="muted">${escapeHtml(r.requestDate || "")}</td>
+          <td>${escapeHtml(r.property || "")}</td>
+          <td>${escapeHtml(r.guest || "")}</td>
+          <td>${escapeHtml(r.source || "")}</td>
+          <td class="muted">${escapeHtml(r.bookingId || "")}</td>
+          <td>${escapeHtml(r.cause || "")}</td>
+          <td>${escapeHtml(r.deptOwner || "")}</td>
+          <td>
+            <span class="chip ${statusClass(r.status)}"><span class="mini"></span>${escapeHtml(r.status || "")}</span>
+          </td>
+          <td class="right money">${fmtMoney(r.amount||0)}</td>
+          <td class="right money">${fmtMoney(r.fees||0)}</td>
+          <td class="right money">${fmtMoney(net)}</td>
+          <td class="right">${(r.daysToResolve ?? "").toString()}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+
+    function renderCharts(view){
+      const weekly = weeklySeries(view, 12);
+
+      const statusCounts = STATUSES.map(s=> view.filter(r=>r.status===s).length);
+      const statusNet = STATUSES.map(s=> view
+        .filter(r=>r.status===s)
+        .reduce((a,r)=>a + ((r.amount||0)-(r.fees||0)),0)
+      );
+
+      const propNet = groupNet(view, "property");
+      const propPairs = [...propNet.entries()].sort((a,b)=>b[1]-a[1]).slice(0,8);
+      const propLabels = propPairs.map(x=>x[0]);
+      const propValues = propPairs.map(x=>x[1]);
+
+      const srcNet = groupNet(view, "source");
+      const srcPairs = [...srcNet.entries()].sort((a,b)=>b[1]-a[1]);
+      const srcLabels = srcPairs.map(x=>x[0]);
+      const srcValues = srcPairs.map(x=>x[1]);
+
+      const commonOpts = {
+        responsive:true,
+        maintainAspectRatio:false,
+        plugins:{
+          legend:{ labels:{ color:"#334155" } },
+          tooltip:{ enabled:true }
+        },
+        scales:{
+          x:{ ticks:{ color:"#475569" }, grid:{ color:"rgba(15,23,42,.08)" } },
+          y:{ ticks:{ color:"#475569" }, grid:{ color:"rgba(15,23,42,.08)" } }
+        }
+      };
+
+      if(chartWeekly) chartWeekly.destroy();
+      chartWeekly = new Chart($("cWeekly"), {
+        type:"line",
+        data:{
+          labels: weekly.labels,
+          datasets:[{
+            label:"Requests",
+            data: weekly.counts,
+            tension:0.35,
+            borderWidth:2,
+            pointRadius:3
+          }]
+        },
+        options: { ...commonOpts, plugins:{ ...commonOpts.plugins, legend:{ display:false } } }
+      });
+
+      if(chartStatus) chartStatus.destroy();
+      chartStatus = new Chart($("cStatus"), {
+        type:"bar",
+        data:{
+          labels: STATUSES,
+          datasets:[
+            { label:"Count", data: statusCounts, borderWidth:1, yAxisID:"y" },
+            { label:"Net Refund", data: statusNet, borderWidth:1, yAxisID:"y1" }
+          ]
+        },
+        options:{
+          ...commonOpts,
+          scales:{
+            x:{ ticks:{ color:"#475569" }, grid:{ color:"rgba(15,23,42,.08)" } },
+            y:{ position:"left", ticks:{ color:"#475569" }, grid:{ color:"rgba(15,23,42,.08)" }, title:{ display:true, text:"Count", color:"#475569" } },
+            y1:{ position:"right", ticks:{ color:"#475569", callback:(v)=>fmtMoney(v) }, grid:{ drawOnChartArea:false }, title:{ display:true, text:"Net (AUD)", color:"#475569" } }
+          }
+        }
+      });
+
+      if(chartProperties) chartProperties.destroy();
+      chartProperties = new Chart($("cProperties"), {
+        type:"bar",
+        data:{ labels: propLabels, datasets:[{ label:"Net Refund", data: propValues, borderWidth:1 }] },
+        options:{
+          ...commonOpts,
+          plugins:{ ...commonOpts.plugins, legend:{ display:false } },
+          scales:{
+            x:{ ticks:{ color:"#475569" }, grid:{ color:"rgba(15,23,42,.08)" } },
+            y:{ ticks:{ color:"#475569", callback:(v)=>fmtMoney(v) }, grid:{ color:"rgba(15,23,42,.08)" } }
+          }
+        }
+      });
+
+      if(chartSources) chartSources.destroy();
+      chartSources = new Chart($("cSources"), {
+        type:"bar",
+        data:{ labels: srcLabels, datasets:[{ label:"Net Refund", data: srcValues, borderWidth:1 }] },
+        options:{
+          ...commonOpts,
+          plugins:{ ...commonOpts.plugins, legend:{ display:false } },
+          scales:{
+            x:{ ticks:{ color:"#475569" }, grid:{ color:"rgba(15,23,42,.08)" } },
+            y:{ ticks:{ color:"#475569", callback:(v)=>fmtMoney(v) }, grid:{ color:"rgba(15,23,42,.08)" } }
+          }
+        }
+      });
+    }
+
+    /***********************
+     * Attachments (photos)
+     ***********************/
+    function ensureAttachments(rec){
+      if(!rec.attachments || !Array.isArray(rec.attachments)) rec.attachments = [];
+      return rec.attachments;
+    }
+
+    function fileToDataURL(file){
+      return new Promise((resolve, reject)=>{
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ""));
+        reader.onerror = () => reject(reader.error || new Error("File read error"));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function downloadDataUrl(dataUrl, filename){
+      const a = document.createElement("a");
+      a.href = dataUrl;
+      a.download = filename || "attachment";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+
+    async function addAttachments(refundId, files){
+      const r = DATA.find(x=>x.id===refundId);
+      if(!r) return;
+
+      const list = ensureAttachments(r);
+
+      // Basic guard to avoid huge localStorage usage
+      const MAX_FILES_PER_REFUND = 8;
+      const remaining = Math.max(0, MAX_FILES_PER_REFUND - list.length);
+      const toAdd = Array.from(files || []).slice(0, remaining);
+
+      for(const f of toAdd){
+        if(!f.type || !f.type.startsWith("image/")) continue;
+
+        const dataUrl = await fileToDataURL(f);
+        list.push({
+          id: "att_" + Math.random().toString(16).slice(2),
+          name: f.name || "photo",
+          type: f.type || "image/*",
+          dataUrl,
+          addedAt: new Date().toISOString()
+        });
+      }
+
+      saveData(DATA);
+      renderAll();
+      openDrawer(refundId);
+    }
+
+    function removeAttachment(refundId, attId){
+      const r = DATA.find(x=>x.id===refundId);
+      if(!r) return;
+
+      const list = ensureAttachments(r);
+      const idx = list.findIndex(a=>a.id===attId);
+      if(idx >= 0) list.splice(idx, 1);
+
+      saveData(DATA);
+      renderAll();
+      openDrawer(refundId);
+    }
+
+    /***********************
+     * Updates / Activity log (with photos)
+     ***********************/
+    function ensureUpdates(rec){
+      if(!rec.updates || !Array.isArray(rec.updates)) rec.updates = [];
+      return rec.updates;
+    }
+
+    // Temp state for the drawer form
+    let pendingUpdatePhotos = []; // [{id,name,type,dataUrl,addedAt}]
+
+    function resetPendingUpdatePhotos(){
+      pendingUpdatePhotos = [];
+    }
+
+    async function addPendingUpdatePhotos(files){
+      // Guard: keep it light for localStorage
+      const MAX_PHOTOS_PER_UPDATE = 6;
+      const remaining = Math.max(0, MAX_PHOTOS_PER_UPDATE - pendingUpdatePhotos.length);
+      const toAdd = Array.from(files || []).slice(0, remaining);
+
+      for(const f of toAdd){
+        if(!f.type || !f.type.startsWith("image/")) continue;
+        const dataUrl = await fileToDataURL(f);
+        pendingUpdatePhotos.push({
+          id: "uatt_" + Math.random().toString(16).slice(2),
+          name: f.name || "photo",
+          type: f.type || "image/*",
+          dataUrl,
+          addedAt: new Date().toISOString()
+        });
+      }
+    }
+
+    function removePendingUpdatePhoto(attId){
+      const idx = pendingUpdatePhotos.findIndex(a=>a.id===attId);
+      if(idx >= 0) pendingUpdatePhotos.splice(idx, 1);
+    }
+
+    function addUpdate(refundId, text){
+      const r = DATA.find(x=>x.id===refundId);
+      if(!r) return;
+
+      const updates = ensureUpdates(r);
+      updates.unshift({
+        id: "upd_" + Math.random().toString(16).slice(2),
+        text: (text || "").trim(),
+        createdAt: new Date().toISOString(),
+        photos: pendingUpdatePhotos.map(p=>({ ...p }))
+      });
+
+      resetPendingUpdatePhotos();
+      saveData(DATA);
+      renderAll();
+      openDrawer(refundId);
+    }
+
+    function deleteUpdate(refundId, updateId){
+      const r = DATA.find(x=>x.id===refundId);
+      if(!r) return;
+
+      const updates = ensureUpdates(r);
+      const idx = updates.findIndex(u=>u.id===updateId);
+      if(idx >= 0) updates.splice(idx, 1);
+
+      saveData(DATA);
+      renderAll();
+      openDrawer(refundId);
+    }
+
+    function removeUpdatePhoto(refundId, updateId, photoId){
+      const r = DATA.find(x=>x.id===refundId);
+      if(!r) return;
+
+      const updates = ensureUpdates(r);
+      const u = updates.find(x=>x.id===updateId);
+      if(!u || !Array.isArray(u.photos)) return;
+
+      const idx = u.photos.findIndex(p=>p.id===photoId);
+      if(idx >= 0) u.photos.splice(idx, 1);
+
+      saveData(DATA);
+      renderAll();
+      openDrawer(refundId);
+    }
+
+    function formatSydneyDateTime(iso){
+      try{
+        return new Date(iso).toLocaleString("en-AU", { timeZone: TZ, year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit" });
+      }catch(e){
+        return iso || "";
+      }
+    }
+
+    function renderUpdatesSection(refund){
+      const updates = ensureUpdates(refund);
+
+      const wrap = document.createElement("div");
+      wrap.className = "updates-box";
+
+      const head = document.createElement("div");
+      head.className = "updates-head";
+      head.innerHTML = `
+        <div class="t">Updates / Activity</div>
+        <div class="badge">${updates.length} update(s)</div>
+      `;
+      wrap.appendChild(head);
+
+      // Form
+      const form = document.createElement("div");
+      form.className = "updates-form";
+
+      const ta = document.createElement("textarea");
+      ta.placeholder = "Write an update… (e.g., Called BDC support, awaiting response. Guest sent bank details. Finance approved partial refund.)";
+      ta.id = "uText_" + refund.id;
+      form.appendChild(ta);
+
+      const row = document.createElement("div");
+      row.className = "updates-row";
+
+      const file = document.createElement("input");
+      file.type = "file";
+      file.accept = "image/*";
+      file.multiple = true;
+
+      const photoBadge = document.createElement("div");
+      photoBadge.className = "badge";
+      photoBadge.textContent = `${pendingUpdatePhotos.length} photo(s) selected`;
+
+      const btnAdd = document.createElement("button");
+      btnAdd.className = "btn primary";
+      btnAdd.type = "button";
+      btnAdd.textContent = "➕ Add Update";
+
+      // Selected photos preview (pending)
+      const pendingWrap = document.createElement("div");
+      pendingWrap.style.display = "grid";
+      pendingWrap.style.gap = "10px";
+
+      const pendingGrid = document.createElement("div");
+      pendingGrid.className = "update-photos";
+      pendingWrap.appendChild(pendingGrid);
+
+      function renderPending(){
+        photoBadge.textContent = `${pendingUpdatePhotos.length} photo(s) selected`;
+        pendingGrid.innerHTML = "";
+        if(pendingUpdatePhotos.length === 0) {
+          pendingWrap.style.display = "none";
+          return;
+        }
+        pendingWrap.style.display = "grid";
+
+        for(const p of pendingUpdatePhotos){
+          const t = document.createElement("div");
+          t.className = "u-thumb";
+          t.innerHTML = `
+            <img src="${p.dataUrl}" alt="${escapeHtml(p.name)}" loading="lazy" />
+            <div class="cap">
+              <span>${escapeHtml(p.name || "photo")}</span>
+              <button class="mini-btn danger" type="button">Remove</button>
+            </div>
+          `;
+          t.querySelector("button").addEventListener("click", (ev)=>{
+            ev.stopPropagation();
+            removePendingUpdatePhoto(p.id);
+            renderPending();
+          });
+          pendingGrid.appendChild(t);
+        }
+      }
+
+      file.addEventListener("change", async (e)=>{
+        const files = e.target.files;
+        if(files && files.length){
+          try{
+            await addPendingUpdatePhotos(files);
+            renderPending();
+          }catch(err){
+            alert("Unable to upload photo. Try a smaller image.");
+          }finally{
+            e.target.value = "";
+          }
+        }
+      });
+
+      btnAdd.addEventListener("click", ()=>{
+        const text = ta.value.trim();
+        if(!text && pendingUpdatePhotos.length === 0){
+          alert("Please write an update or attach a photo.");
+          return;
+        }
+        addUpdate(refund.id, text);
+      });
+
+      row.appendChild(file);
+      row.appendChild(photoBadge);
+      row.appendChild(btnAdd);
+
+      form.appendChild(row);
+      form.appendChild(pendingWrap);
+
+      const hint = document.createElement("div");
+      hint.className = "hint";
+      hint.textContent = "Updates and photos are stored locally (this browser only).";
+      form.appendChild(hint);
+
+      wrap.appendChild(form);
+
+      // List
+      const list = document.createElement("div");
+      list.className = "updates-list";
+
+      if(updates.length === 0){
+        const empty = document.createElement("div");
+        empty.className = "hint";
+        empty.textContent = "No updates yet. Add the first update above.";
+        list.appendChild(empty);
+      } else {
+        for(const u of updates){
+          const item = document.createElement("div");
+          item.className = "update-item";
+
+          const top = document.createElement("div");
+          top.className = "update-top";
+
+          const meta = document.createElement("div");
+          meta.className = "update-meta";
+          meta.innerHTML = `
+            <div class="when">${escapeHtml(formatSydneyDateTime(u.createdAt))}</div>
+            <div class="sub">Australia/Sydney</div>
+          `;
+
+          const del = document.createElement("button");
+          del.className = "mini-btn danger";
+          del.type = "button";
+          del.textContent = "Delete";
+          del.addEventListener("click", (ev)=>{
+            ev.stopPropagation();
+            if(confirm("Delete this update?")){
+              deleteUpdate(refund.id, u.id);
+            }
+          });
+
+          top.appendChild(meta);
+          top.appendChild(del);
+          item.appendChild(top);
+
+          if(u.text){
+            const txt = document.createElement("div");
+            txt.className = "update-text";
+            txt.textContent = u.text;
+            item.appendChild(txt);
+          }
+
+          const photos = Array.isArray(u.photos) ? u.photos : [];
+          if(photos.length){
+            const grid = document.createElement("div");
+            grid.className = "update-photos";
+
+            for(const p of photos){
+              const t = document.createElement("div");
+              t.className = "u-thumb";
+              t.innerHTML = `
+                <img src="${p.dataUrl}" alt="${escapeHtml(p.name)}" loading="lazy" />
+                <div class="cap">
+                  <span>${escapeHtml(p.name || "photo")}</span>
+                  <span style="display:flex; gap:6px;">
+                    <button class="mini-btn" type="button">View</button>
+                    <button class="mini-btn" type="button">Remove</button>
+                  </span>
+                </div>
+              `;
+              const btns = t.querySelectorAll("button");
+              btns[0].addEventListener("click", (ev)=>{
+                ev.stopPropagation();
+                window.open(p.dataUrl || "", "_blank");
+              });
+              btns[1].classList.add("danger");
+              btns[1].addEventListener("click", (ev)=>{
+                ev.stopPropagation();
+                if(confirm("Remove this photo from the update?")){
+                  removeUpdatePhoto(refund.id, u.id, p.id);
+                }
+              });
+              grid.appendChild(t);
+            }
+
+            item.appendChild(grid);
+          }
+
+          list.appendChild(item);
+        }
+      }
+
+      wrap.appendChild(list);
+
+      // Reset pending state when rendering a different refund
+      resetPendingUpdatePhotos();
+
+      return wrap;
+    }
+
+    function renderAttachmentSection(refund){
+      const list = ensureAttachments(refund);
+
+      const wrap = document.createElement("div");
+      wrap.className = "attach-box";
+
+      const head = document.createElement("div");
+      head.className = "attach-head";
+      head.innerHTML = `
+        <div class="t">Attachments (Photos)</div>
+        <div class="badge">${list.length} file(s)</div>
+      `;
+      wrap.appendChild(head);
+
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = "image/*";
+      input.multiple = true;
+      input.style.width = "100%";
+      input.style.marginBottom = "10px";
+      input.addEventListener("change", async (e)=>{
+        const files = e.target.files;
+        if(files && files.length){
+          try{
+            await addAttachments(refund.id, files);
+          }catch(err){
+            alert("Unable to upload photo. Try a smaller image.");
+          }finally{
+            e.target.value = "";
+          }
+        }
+      });
+      wrap.appendChild(input);
+
+      if(list.length === 0){
+        const p = document.createElement("div");
+        p.className = "hint";
+        p.textContent = "Upload photos like ID screenshot, payment proof, platform message, or invoice. Saved only in this browser.";
+        wrap.appendChild(p);
+        return wrap;
+      }
+
+      const grid = document.createElement("div");
+      grid.className = "attach-grid";
+
+      for(const att of list){
+        const card = document.createElement("div");
+        card.className = "thumb";
+
+        const img = document.createElement("img");
+        img.src = att.dataUrl || "";
+        img.alt = att.name || "Attachment";
+        img.loading = "lazy";
+        card.appendChild(img);
+
+        const cap = document.createElement("div");
+        cap.className = "cap";
+
+        const name = document.createElement("div");
+        name.className = "name";
+        name.textContent = att.name || "photo";
+        cap.appendChild(name);
+
+        const actions = document.createElement("div");
+        actions.className = "actions";
+
+        const btnView = document.createElement("button");
+        btnView.className = "mini-btn";
+        btnView.textContent = "View";
+        btnView.addEventListener("click", (ev)=>{
+          ev.stopPropagation();
+          window.open(att.dataUrl || "", "_blank");
+        });
+
+        const btnDown = document.createElement("button");
+        btnDown.className = "mini-btn";
+        btnDown.textContent = "Download";
+        btnDown.addEventListener("click", (ev)=>{
+          ev.stopPropagation();
+          downloadDataUrl(att.dataUrl || "", att.name || "photo.png");
+        });
+
+        const btnDel = document.createElement("button");
+        btnDel.className = "mini-btn danger";
+        btnDel.textContent = "Remove";
+        btnDel.addEventListener("click", (ev)=>{
+          ev.stopPropagation();
+          if(confirm("Remove this photo from the refund request?")){
+            removeAttachment(refund.id, att.id);
+          }
+        });
+
+        actions.appendChild(btnView);
+        actions.appendChild(btnDown);
+        actions.appendChild(btnDel);
+
+        cap.appendChild(actions);
+        card.appendChild(cap);
+
+        grid.appendChild(card);
+      }
+
+      wrap.appendChild(grid);
+
+      const note = document.createElement("div");
+      note.className = "hint";
+      note.textContent = "Note: Photos are stored locally (this browser only). If you clear browser data, attachments will be removed.";
+      note.style.marginTop = "10px";
+      wrap.appendChild(note);
+
+      return wrap;
+    }
+
+    /***********************
+     * Drawer
+     ***********************/
+    function openDrawer(id){
+      selectedId = id;
+      const r = DATA.find(x=>x.id===id);
+      if(!r) return;
+
+      $("dTitle").textContent = `Refund ${r.id}`;
+      $("dSub").textContent = `${r.property || "—"} • ${r.guest || "—"} • ${r.requestDate || "—"} • ${r.status || "—"}`;
+
+      const net = (r.amount||0) - (r.fees||0);
+      const body = $("drawerBody");
+      body.innerHTML = "";
+
+      const entries = [
+        ["Refund ID", r.id],
+        ["Request Date", r.requestDate || "—"],
+        ["Property", r.property || "—"],
+        ["Guest", r.guest || "—"],
+        ["Booking Source", r.source || "—"],
+        ["Booking ID", r.bookingId || "—"],
+        ["Cause", r.cause || "—"],
+        ["Department Owner", r.deptOwner || "—"],
+        ["Status", `<span class="chip ${statusClass(r.status)}"><span class="mini"></span>${escapeHtml(r.status||"")}</span>`],
+        ["Amount (AUD)", fmtMoney(r.amount||0)],
+        ["Fees (AUD)", fmtMoney(r.fees||0)],
+        ["Net Refund (AUD)", fmtMoney(net)],
+        ["Days to Resolve", (r.daysToResolve ?? "—").toString()],
+      ];
+
+      for(const [k,v] of entries){
+        const div = document.createElement("div");
+        div.className = "kv";
+        div.innerHTML = `<div class="k">${escapeHtml(k)}</div><div class="v">${v}</div>`;
+        body.appendChild(div);
+      }
+
+      // Attachments section (photos)
+      body.appendChild(renderAttachmentSection(r));
+
+      // Updates / activity section
+      body.appendChild(renderUpdatesSection(r));
+
+      $("backdrop").classList.add("show");
+      $("drawer").classList.add("open");
+    }
+
+    function closeDrawer(){
+      $("backdrop").classList.remove("show");
+      $("drawer").classList.remove("open");
+      selectedId = null;
+    }
+
+    function updateStatus(newStatus){
+      if(!selectedId) return;
+      const r = DATA.find(x=>x.id===selectedId);
+      if(!r) return;
+
+      r.status = newStatus;
+
+      if(newStatus !== "Requested" && (r.daysToResolve===null || r.daysToResolve===undefined || r.daysToResolve==="")){
+        const req = parseDate(r.requestDate) || new Date();
+        r.daysToResolve = clamp(daysBetween(req, new Date()), 0, 3650);
+      }
+
+      saveData(DATA);
+      renderAll();
+      openDrawer(selectedId);
+    }
+
+    /***********************
+     * CSV Export
+     ***********************/
+    function exportCSV(){
+      const cols = [
+        "id","requestDate","property","guest","source","bookingId","cause","deptOwner",
+        "status","amountAUD","feesAUD","netAUD","daysToResolve"
+      ];
+
+      const rows = VIEW.map(r=>{
+        const net = (r.amount||0)-(r.fees||0);
+        return [
+          r.id, r.requestDate, r.property, r.guest, r.source, r.bookingId,
+          r.cause, r.deptOwner, r.status,
+          r.amount, r.fees, net, r.daysToResolve
+        ];
+      });
+
+      const esc = (v) => {
+        const s = (v===null || v===undefined) ? "" : String(v);
+        const needs = /[",\n]/.test(s);
+        const t = s.replaceAll('"','""');
+        return needs ? `"${t}"` : t;
+      };
+
+      const csv = [cols.join(",")].concat(rows.map(r=>r.map(esc).join(","))).join("\n");
+      const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "azzurro_refund_dashboard_export.csv";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    /***********************
+     * Modal
+     ***********************/
+    function openModal(){
+      $("modalBackdrop").style.display = "block";
+      $("modal").style.display = "flex";
+
+      $("nProperty").value = PROPERTIES[0] || "";
+      $("nGuest").value = "";
+      $("nSource").value = SOURCES[0] || "";
+      $("nBookingId").value = "";
+      $("nCause").value = CAUSES[0] || "";
+      $("nDept").value = DEPARTMENTS[0] || "";
+      $("nStatus").value = "Requested";
+      $("nAmount").value = "";
+      $("nFees").value = "";
+      $("nDate").value = todayISO();
+      $("nDays").value = "";
+    }
+
+    function closeModal(){
+      $("modalBackdrop").style.display = "none";
+      $("modal").style.display = "none";
+    }
+
+    function saveModal(){
+      const property = $("nProperty").value.trim();
+      const guest = $("nGuest").value.trim();
+      const source = $("nSource").value.trim();
+      const bookingId = $("nBookingId").value.trim();
+      const cause = $("nCause").value.trim();
+      const deptOwner = $("nDept").value.trim();
+      const status = $("nStatus").value.trim();
+      const amount = +($("nAmount").value || 0);
+      const fees = +($("nFees").value || 0);
+      const requestDate = $("nDate").value || todayISO();
+      const daysToResolveRaw = $("nDays").value;
+      const daysToResolve = (daysToResolveRaw === "" ? null : +daysToResolveRaw);
+
+      if(!property || !guest || !source || !bookingId){
+        alert("Please fill Property, Guest Name, Booking Source, and Booking ID.");
+        return;
+      }
+      if(amount < 0 || fees < 0){
+        alert("Amount and Fees must be >= 0.");
+        return;
+      }
+
+      const rec = {
+        id: genId(DATA),
+        requestDate,
+        property,
+        guest,
+        source,
+        bookingId,
+        cause,
+        deptOwner,
+        status,
+        amount: +amount.toFixed(2),
+        fees: +fees.toFixed(2),
+        daysToResolve
+      };
+
+      DATA.push(rec);
+      saveData(DATA);
+      closeModal();
+      renderAll();
+      openDrawer(rec.id);
+    }
+
+    /***********************
+     * Events
+     ***********************/
+    function wireEvents(){
+      const inputs = ["fSearch","fProperty","fSource","fStatus","fCause","fDept","fRange","fMin","fMax"];
+      inputs.forEach(id => $(id).addEventListener("input", renderAll));
+      $("fRange").addEventListener("change", renderAll);
+$("btnExport").addEventListener("click", exportCSV);
+
+      $("backdrop").addEventListener("click", closeDrawer);
+      $("btnClose").addEventListener("click", closeDrawer);
+
+      $("btnMarkApproved").addEventListener("click", ()=>updateStatus("Approved"));
+      $("btnMarkRejected").addEventListener("click", ()=>updateStatus("Rejected"));
+      $("btnMarkPaid").addEventListener("click", ()=>updateStatus("Paid"));
+
+      $("btnNew").addEventListener("click", openModal);
+      $("btnModalClose").addEventListener("click", closeModal);
+      $("btnModalCancel").addEventListener("click", closeModal);
+      $("modalBackdrop").addEventListener("click", closeModal);
+      $("btnModalSave").addEventListener("click", saveModal);
+    }
+
+    /***********************
+     * Init
+     ***********************/
+    (function init(){
+      // Fill filter dropdowns
+      fillSelect("fProperty", PROPERTIES);
+      fillSelect("fSource", SOURCES);
+      fillSelect("fCause", CAUSES);
+      fillSelect("fDept", DEPARTMENTS);
+
+      // Fill modal dropdowns
+      fillModalSelect("nProperty", PROPERTIES);
+      fillModalSelect("nSource", SOURCES);
+      fillModalSelect("nCause", CAUSES);
+      fillModalSelect("nDept", DEPARTMENTS);
+
+      // Clean up any legacy/demo rows saved in the browser:
+      // keep only records that match the current Azzurro Hotels property list.
+      if(Array.isArray(DATA) && DATA.length){
+        const allowed = new Set(PROPERTIES);
+        const cleaned = DATA.filter(r => r && allowed.has(r.property));
+        if(cleaned.length !== DATA.length){
+          DATA = cleaned;
+          saveData(DATA);
+        }
+      }
+
+      $("lastUpdated").textContent = "Updated: " + new Date().toLocaleString("en-AU", { timeZone: TZ });
+      wireEvents();
+
+      if(DATA.length === 0){
+        // Start empty for production use. Add items via “New Refund”.
+        saveData(DATA);
+      }
+renderAll();
+    })();
+  </script>
+</body>
+</html>

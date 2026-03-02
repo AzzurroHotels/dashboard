@@ -1246,41 +1246,17 @@ function ChatWidget({ isOpen, onToggle }) {
     try {
       const apiMessages = newMessages.map(m => ({ role: m.role, content: m.content }));
 
-      // IMPORTANT: Never call Anthropic directly from the browser (CORS + API key exposure).
-      // Use Supabase Edge Function proxy instead.
-      const sb = window.__sb;
-      if (!sb || !sb.functions) throw new Error('Supabase client not ready');
-      // Ensure JWT is attached (some projects enforce verify_jwt on Edge Functions)
-      const { data: { session }, error: sessErr } = await sb.auth.getSession();
-      const jwt = session?.access_token;
-
-      if (sessErr || !jwt) {
-        throw new Error('Unauthorized: No active session');
-      }
-
-      const { data, error } = await sb.functions.invoke('anthropic-proxy', {
-        body: {
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1000,
-          system: SYSTEM_PROMPT,
-          messages: apiMessages,
-        },
-        headers: {
-          Authorization: `Bearer ${jwt}`,
-          apikey: window.__sbAnonKey || '',
-        },
+      // Route through local Groq proxy
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: apiMessages, system: SYSTEM_PROMPT }),
       });
 
-      if (error) throw error;
+      const data = await response.json();
+      if (!response.ok || !data.reply) throw new Error(data.error || 'No reply');
 
-      // Expecting Anthropic-style response: { content: [{type:'text', text:'...'}] }
-      const blocks = data?.content || data?.message?.content || [];
-      const assistantText = Array.isArray(blocks)
-        ? blocks.map(b => b.type === 'text' ? b.text : '').filter(Boolean).join('\\n')
-        : (data?.text || data?.response || '');
-
-      const finalText = assistantText || "Sorry, I couldn't process that. Could you try again?";
-      setMessages(prev => [...prev, { role: 'assistant', content: finalText }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: data.reply }]);
     } catch (err) {
       console.error('Assistant error:', err);
       const em = ((err && err.message) ? String(err.message) : '').toLowerCase();

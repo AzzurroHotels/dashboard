@@ -693,6 +693,21 @@
                     <option value="high">High</option>
                 </select>
             </div>
+            <div class="form-group">
+                <label class="form-label">Attach Photos / Videos</label>
+                <div class="file-upload-area" id="issueFileUploadArea">
+                    <input type="file" id="issueFileUploadInput" multiple accept="image/*,video/*">
+                    <div class="file-upload-label">
+                        <div style="font-size: 24px; margin-bottom: 4px;">📎</div>
+                        <span>Click to browse</span> or drag & drop<br>
+                        <span style="font-size: 11px; color: #a0aec0;">Images & videos (max 10MB each)</span>
+                    </div>
+                </div>
+                <div class="file-preview-container" id="issueFilePreviewContainer"></div>
+                <div class="upload-progress" id="issueUploadProgress">
+                    <div class="upload-progress-bar" id="issueUploadProgressBar"></div>
+                </div>
+            </div>
             <div class="modal-actions">
                 <button class="btn btn-cancel" onclick="closeIssueModal()">Cancel</button>
                 <button class="btn" onclick="addIssue()">Log Issue</button>
@@ -786,6 +801,7 @@
         let currentUser = null;
         let properties = []; // Nested: [{id, name, rooms: [{id, number, issues: [{id, description, urgency, archived, timestamp, updates: [{text, timestamp, user, media}]}]}]}]
         let pendingFiles = [];
+        let issuePendingFiles = [];
         const toId = (v) => String(v);
 
         // ===== INIT =====
@@ -1042,10 +1058,16 @@
             document.getElementById('currentRoomId').value = roomId;
             document.getElementById('issueDescriptionInput').value = '';
             document.getElementById('issueUrgencyInput').value = 'normal';
+            issuePendingFiles = [];
+            renderIssueFilePreviews();
             document.getElementById('issueModal').classList.add('active');
+            setupIssueFileUpload();
         }
 
-        function closeIssueModal() { document.getElementById('issueModal').classList.remove('active'); }
+        function closeIssueModal() {
+            document.getElementById('issueModal').classList.remove('active');
+            issuePendingFiles = [];
+        }
 
         async function addIssue() {
             const propertyId = document.getElementById('currentPropertyId').value;
@@ -1054,13 +1076,28 @@
             const urgency = document.getElementById('issueUrgencyInput').value;
             if (!description) return;
 
-            await sb.from('maintenance_issues').insert({
+            const { data: issue } = await sb.from('maintenance_issues').insert({
                 room_id: roomId,
                 property_id: propertyId,
                 description,
                 urgency,
                 reported_by: currentUser.id,
-            });
+            }).select().single();
+
+            // Upload attached files if any
+            if (issue && issuePendingFiles.length > 0) {
+                const { data: updateRec } = await sb.from('maintenance_updates').insert({
+                    issue_id: issue.id,
+                    author_email: currentUser.email,
+                    text: '(attached photos)',
+                }).select().single();
+
+                if (updateRec) {
+                    await uploadIssueFiles(issue.id, updateRec.id);
+                }
+            }
+
+            issuePendingFiles = [];
             closeIssueModal();
             await loadData();
         }
@@ -1131,15 +1168,18 @@
         }
 
         // ===== FILE UPLOAD (Supabase Storage) =====
+        let updateFileUploadReady = false;
         function setupFileUpload() {
+            if (updateFileUploadReady) return;
             const area = document.getElementById('fileUploadArea');
             const input = document.getElementById('fileUploadInput');
             if (!area || !input) return;
-            area.addEventListener('click', () => input.click());
+            area.addEventListener('click', (e) => { if (e.target !== input) input.click(); });
             area.addEventListener('dragover', (e) => { e.preventDefault(); area.classList.add('dragover'); });
             area.addEventListener('dragleave', () => { area.classList.remove('dragover'); });
             area.addEventListener('drop', (e) => { e.preventDefault(); area.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
             input.addEventListener('change', (e) => { handleFiles(e.target.files); input.value = ''; });
+            updateFileUploadReady = true;
         }
 
         function handleFiles(fileList) {
@@ -1171,6 +1211,15 @@
 
         function removePendingFile(idx) { pendingFiles.splice(idx, 1); renderFilePreviews(); }
 
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
         async function uploadFiles(issueId, updateId) {
             if (pendingFiles.length === 0) return [];
             const progressEl = document.getElementById('uploadProgress');
@@ -1180,30 +1229,103 @@
             const uploaded = [];
             for (let i = 0; i < pendingFiles.length; i++) {
                 const file = pendingFiles[i];
-                const ext = file.name.split('.').pop();
-                const filename = `${Date.now()}_${i}.${ext}`;
-                const path = `maintenance/${issueId}/${filename}`;
+                try {
+                    const dataUrl = await fileToBase64(file);
+                    const mediaType = file.type.startsWith('image/') ? 'image' : 'video';
 
-                const { data, error } = await sb.storage.from('maintenance-media').upload(path, file);
-                if (error) { console.error('Upload error:', error); alert(`Failed to upload "${file.name}"`); continue; }
+                    await sb.from('maintenance_media').insert({
+                        update_id: updateId,
+                        issue_id: issueId,
+                        url: dataUrl,
+                        media_type: mediaType,
+                        file_name: file.name,
+                    });
 
-                const { data: urlData } = sb.storage.from('maintenance-media').getPublicUrl(path);
-                uploaded.push({ url: urlData.publicUrl, type: file.type.startsWith('image/') ? 'image' : 'video', name: file.name });
-
-                // Save media record
-                await sb.from('maintenance_media').insert({
-                    update_id: updateId,
-                    issue_id: issueId,
-                    url: urlData.publicUrl,
-                    media_type: file.type.startsWith('image/') ? 'image' : 'video',
-                    file_name: file.name,
-                });
+                    uploaded.push({ url: dataUrl, type: mediaType, name: file.name });
+                } catch (err) {
+                    console.error('Upload error:', err);
+                    alert(`Failed to save "${file.name}"`);
+                }
 
                 if (barEl) barEl.style.width = Math.round(((i + 1) / pendingFiles.length) * 100) + '%';
             }
 
             if (progressEl) setTimeout(() => { progressEl.style.display = 'none'; if (barEl) barEl.style.width = '0%'; }, 500);
             return uploaded;
+        }
+
+        // ===== ISSUE CREATION FILE UPLOAD =====
+        let issueFileUploadReady = false;
+        function setupIssueFileUpload() {
+            if (issueFileUploadReady) return;
+            const area = document.getElementById('issueFileUploadArea');
+            const input = document.getElementById('issueFileUploadInput');
+            if (!area || !input) return;
+            area.addEventListener('click', (e) => { if (e.target !== input) input.click(); });
+            area.addEventListener('dragover', (e) => { e.preventDefault(); area.classList.add('dragover'); });
+            area.addEventListener('dragleave', () => { area.classList.remove('dragover'); });
+            area.addEventListener('drop', (e) => { e.preventDefault(); area.classList.remove('dragover'); handleIssueFiles(e.dataTransfer.files); });
+            input.addEventListener('change', (e) => { handleIssueFiles(e.target.files); input.value = ''; });
+            issueFileUploadReady = true;
+        }
+
+        function handleIssueFiles(fileList) {
+            const maxSize = 10 * 1024 * 1024;
+            for (const file of fileList) {
+                if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) { alert(`"${file.name}" is not an image or video.`); continue; }
+                if (file.size > maxSize) { alert(`"${file.name}" exceeds 10MB limit.`); continue; }
+                issuePendingFiles.push(file);
+            }
+            renderIssueFilePreviews();
+        }
+
+        function renderIssueFilePreviews() {
+            const container = document.getElementById('issueFilePreviewContainer');
+            if (!container) return;
+            container.innerHTML = '';
+            issuePendingFiles.forEach((file, idx) => {
+                const item = document.createElement('div');
+                item.className = 'file-preview-item';
+                const url = URL.createObjectURL(file);
+                if (file.type.startsWith('image/')) {
+                    item.innerHTML = `<img src="${url}"><button class="file-preview-remove" onclick="removeIssuePendingFile(${idx})">x</button>`;
+                } else {
+                    item.innerHTML = `<video src="${url}" muted></video><button class="file-preview-remove" onclick="removeIssuePendingFile(${idx})">x</button>`;
+                }
+                container.appendChild(item);
+            });
+        }
+
+        function removeIssuePendingFile(idx) { issuePendingFiles.splice(idx, 1); renderIssueFilePreviews(); }
+
+        async function uploadIssueFiles(issueId, updateId) {
+            if (issuePendingFiles.length === 0) return;
+            const progressEl = document.getElementById('issueUploadProgress');
+            const barEl = document.getElementById('issueUploadProgressBar');
+            if (progressEl) progressEl.style.display = 'block';
+
+            for (let i = 0; i < issuePendingFiles.length; i++) {
+                const file = issuePendingFiles[i];
+                try {
+                    const dataUrl = await fileToBase64(file);
+                    const mediaType = file.type.startsWith('image/') ? 'image' : 'video';
+
+                    await sb.from('maintenance_media').insert({
+                        update_id: updateId,
+                        issue_id: issueId,
+                        url: dataUrl,
+                        media_type: mediaType,
+                        file_name: file.name,
+                    });
+                } catch (err) {
+                    console.error('Upload error:', err);
+                    alert(`Failed to save "${file.name}"`);
+                }
+
+                if (barEl) barEl.style.width = Math.round(((i + 1) / issuePendingFiles.length) * 100) + '%';
+            }
+
+            if (progressEl) setTimeout(() => { progressEl.style.display = 'none'; if (barEl) barEl.style.width = '0%'; }, 500);
         }
 
         // ===== LIGHTBOX =====
