@@ -1,4 +1,5 @@
 .env
+groq-config.js
 __pycache__/
 *.pyc
 .claude/

@@ -107,9 +107,10 @@
     <div class="input-hint">Press Enter to send · Shift+Enter for new line</div>
 </div>
 
+<script src="groq-config.js"></script>
 <script>
 // ── Config ──────────────────────────────────────────────────────────
-const API_URL = '/api/chat'; // Local proxy handles Gemini + Groq fallback
+const API_URL = '/api/chat';
 
 let history = [];
 let isBusy = false;
@@ -130,25 +131,52 @@ function setBadge(provider) {
     }
 }
 
-// ── AI Call (proxy → offline fallback) ──────────────────────────────
+// ── AI Call (proxy → Groq direct → offline fallback) ────────────────
+const GROQ_KEY = (typeof GROQ_CONFIG !== 'undefined') ? GROQ_CONFIG.key : '';
+const GROQ_URL = (typeof GROQ_CONFIG !== 'undefined') ? GROQ_CONFIG.url : '';
+const SYSTEM = 'You are a helpful AI assistant for Azzurro Hotels. Help staff with hotel operations, guest management, scheduling, and policies. Be concise and professional. Use markdown formatting.';
+
 async function getAIReply(text) {
     const messages = history.slice(-10);
     messages.push({ role: 'user', content: text });
 
+    // Try local proxy first (localhost only)
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ messages }),
+            });
+            const data = await response.json();
+            if (response.ok && data.reply) {
+                setBadge(data.provider || 'groq');
+                return data.reply;
+            }
+        } catch (e) { /* proxy unavailable, fall through */ }
+    }
+
+    // Fallback: call Groq API directly (for GitHub Pages / deployed)
     try {
-        const response = await fetch(API_URL, {
+        const resp = await fetch(GROQ_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ messages }),
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${GROQ_KEY}`,
+            },
+            body: JSON.stringify({
+                model: 'llama-3.1-8b-instant',
+                messages: [{ role: 'system', content: SYSTEM }, ...messages],
+                temperature: 0.7,
+                max_tokens: 1024,
+            }),
         });
-
-        const data = await response.json();
-
-        if (response.ok && data.reply) {
-            setBadge(data.provider || 'gemini');
-            return data.reply;
+        const data = await resp.json();
+        if (resp.ok && data.choices?.[0]?.message?.content) {
+            setBadge('groq');
+            return data.choices[0].message.content;
         }
-    } catch (e) { /* server not running or network error */ }
+    } catch (e) { /* Groq failed, fall through */ }
 
     setBadge('offline');
     return findOfflineReply(text);
@@ -156,14 +184,26 @@ async function getAIReply(text) {
 
 // ── Check connection on page load ───────────────────────────────────
 async function checkConnection() {
+    // Try local proxy
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        try {
+            const r = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ messages: [{ role: 'user', content: 'hi' }] }),
+            });
+            const data = await r.json();
+            if (r.ok && data.provider) { setBadge(data.provider); return; }
+        } catch (e) { /* fall through */ }
+    }
+    // Try Groq directly
     try {
-        const r = await fetch(API_URL, {
+        const r = await fetch(GROQ_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ messages: [{ role: 'user', content: 'hi' }] }),
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_KEY}` },
+            body: JSON.stringify({ model: 'llama-3.1-8b-instant', messages: [{ role: 'system', content: 'hi' }, { role: 'user', content: 'hi' }], max_tokens: 5 }),
         });
-        const data = await r.json();
-        if (r.ok && data.provider) { setBadge(data.provider); return; }
+        if (r.ok) { setBadge('groq'); return; }
     } catch (e) { /* fall through */ }
     setBadge('offline');
 }
