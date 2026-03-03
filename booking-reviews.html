@@ -156,6 +156,13 @@ body { font-family:'DM Sans',system-ui,sans-serif; background:var(--bg); color:v
 <div class="setup-panel" id="setupPanel">
   <div class="setup-row">
     <div class="setup-field grow">
+      <label>Apify API Token</label>
+      <input type="password" id="apifyToken" placeholder="apify_api_..." />
+    </div>
+    <button class="btn btn-outline" onclick="toggleTokenVisibility()" id="btnToggleToken" style="height:38px">Show</button>
+  </div>
+  <div class="setup-row" style="margin-top:10px">
+    <div class="setup-field grow">
       <label>Hotel URL (for new scraper runs)</label>
       <input type="text" id="hotelUrl" placeholder="https://www.booking.com/hotel/..." />
     </div>
@@ -274,7 +281,10 @@ body { font-family:'DM Sans',system-ui,sans-serif; background:var(--bg); color:v
 <script>
 const ACTOR_ID = 'tTRAuL9PrLC9FqWkJ';
 const APIFY_BASE = 'https://api.apify.com/v2';
-const APIFY_TOKEN = 'apify_api_a6YBF80WEatCceAwua8JzwRva447mN0syyhP';
+
+function getApifyToken() {
+  return (localStorage.getItem('azzurro_apify_token') || '').trim();
+}
 const PER_PAGE = 15;
 
 let allReviews = [];
@@ -285,6 +295,10 @@ let isLoading = false;
 
 // ─── Settings persistence ───
 function loadSettings() {
+  // Load shared Apify token
+  const token = localStorage.getItem('azzurro_apify_token') || '';
+  document.getElementById('apifyToken').value = token;
+
   try {
     const s = JSON.parse(localStorage.getItem('azzurro_booking_settings') || '{}');
     if (s.hotelUrl) document.getElementById('hotelUrl').value = s.hotelUrl;
@@ -296,6 +310,9 @@ function loadSettings() {
 }
 
 function saveSettings() {
+  // Save shared Apify token
+  localStorage.setItem('azzurro_apify_token', document.getElementById('apifyToken').value.trim());
+
   const s = {
     hotelUrl: document.getElementById('hotelUrl').value.trim(),
     maxReviews: document.getElementById('maxReviews').value,
@@ -307,6 +324,23 @@ function saveSettings() {
   showToast('Settings saved', 'success');
 }
 
+function toggleTokenVisibility() {
+  const input = document.getElementById('apifyToken');
+  const btn = document.getElementById('btnToggleToken');
+  if (input.type === 'password') { input.type = 'text'; btn.textContent = 'Hide'; }
+  else { input.type = 'password'; btn.textContent = 'Show'; }
+}
+
+function requireToken() {
+  if (!getApifyToken()) {
+    showToast('Please add your Apify API token in Settings first', 'error');
+    document.getElementById('setupPanel').classList.remove('hidden');
+    document.getElementById('apifyToken').focus();
+    return false;
+  }
+  return true;
+}
+
 function toggleSetup() {
   document.getElementById('setupPanel').classList.toggle('hidden');
 }
@@ -314,13 +348,14 @@ function toggleSetup() {
 // ─── Fetch reviews from last run ───
 async function fetchReviews() {
   if (isLoading) return;
+  if (!requireToken()) return;
 
   isLoading = true;
   document.getElementById('btnFetch').disabled = true;
   document.getElementById('btnFetch').innerHTML = '<span class="loading-spinner"></span> Fetching...';
 
   try {
-    const url = `${APIFY_BASE}/acts/${ACTOR_ID}/runs/last/dataset/items?token=${APIFY_TOKEN}&limit=1000`;
+    const url = `${APIFY_BASE}/acts/${ACTOR_ID}/runs/last/dataset/items?token=${getApifyToken()}&limit=1000`;
     const resp = await fetch(url);
     if (!resp.ok) {
       const errText = await resp.text();
@@ -346,6 +381,7 @@ async function fetchReviews() {
 
 // ─── Run scraper ───
 async function runScraper() {
+  if (!requireToken()) return;
   const hotelUrl = document.getElementById('hotelUrl').value.trim();
   if (!hotelUrl) { showToast('Please enter a Booking.com hotel URL in Settings', 'error'); return; }
 
@@ -365,7 +401,7 @@ async function runScraper() {
     const rtype = document.getElementById('scraperType').value;
     if (rtype) input.reviewerType = rtype;
 
-    const runUrl = `${APIFY_BASE}/acts/${ACTOR_ID}/run-sync-get-dataset-items?token=${APIFY_TOKEN}&timeout=300`;
+    const runUrl = `${APIFY_BASE}/acts/${ACTOR_ID}/run-sync-get-dataset-items?token=${getApifyToken()}&timeout=300`;
     const resp = await fetch(runUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
