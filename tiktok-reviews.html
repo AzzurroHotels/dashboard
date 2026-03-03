@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TikTok Video Reviews — Azzurro Hotels</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F5F7FB; --surface: #FFFFFF; --surface2: #F8FAFC;
+  --text: #0F172A; --muted: #64748B; --border: #E2E8F0;
+  --accent: #E1306C; --accent2: #C13584;
+  --green: #16A34A; --green-bg: #F0FDF4;
+  --amber: #D97706; --amber-bg: #FFFBEB;
+  --red: #DC2626; --red-bg: #FEF2F2;
+  --violet: #7C3AED; --violet-bg: #F5F3FF;
+  --tiktok: #00F2EA; --tiktok2: #FF0050;
+  --gold: #C4A877;
+  --radius: 16px; --radius2: 12px;
+  --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --shadow2: 0 4px 16px rgba(0,0,0,.08);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'DM Sans',system-ui,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+
+/* Header */
+.header { background:var(--surface); border-bottom:1px solid var(--border); padding:16px 28px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+.header-logo { width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg,#00F2EA,#FF0050); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; color:#fff; flex-shrink:0; }
+.header-title h1 { font-size:18px; font-weight:700; color:var(--text); line-height:1.2; }
+.header-title p { font-size:12px; color:var(--muted); }
+.header-actions { margin-left:auto; display:flex; align-items:center; gap:10px; }
+.btn { padding:8px 18px; border-radius:var(--radius2); border:none; font-family:inherit; font-size:13px; font-weight:600; cursor:pointer; transition:.15s; display:inline-flex; align-items:center; gap:6px; }
+.btn-primary { background:var(--accent); color:#fff; }
+.btn-primary:hover { background:var(--accent2); }
+.btn-outline { background:transparent; border:1px solid var(--border); color:var(--text); }
+.btn-outline:hover { background:var(--surface2); }
+.btn-tiktok { background:linear-gradient(135deg,#00F2EA,#FF0050); color:#fff; }
+.btn-tiktok:hover { filter:brightness(1.1); }
+.btn:disabled { opacity:.5; cursor:not-allowed; }
+
+/* Setup panel */
+.setup-panel { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:20px 24px; margin:20px 28px 0; box-shadow:var(--shadow); }
+.setup-panel.hidden { display:none; }
+.setup-row { display:flex; gap:12px; align-items:end; flex-wrap:wrap; }
+.setup-field { display:flex; flex-direction:column; gap:4px; }
+.setup-field.grow { flex:1; min-width:200px; }
+.setup-field label { font-size:11px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; }
+.setup-field input, .setup-field select { padding:9px 14px; border:1px solid var(--border); border-radius:var(--radius2); font-family:inherit; font-size:13px; outline:none; background:var(--surface2); }
+.setup-field input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(225,48,108,.1); }
+.setup-hint { font-size:11px; color:var(--muted); margin-top:10px; line-height:1.5; }
+.setup-hint a { color:var(--accent); text-decoration:none; }
+
+/* Stats bar */
+.stats-bar { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:14px; padding:20px 28px 0; }
+.stat-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px 18px; box-shadow:var(--shadow); }
+.stat-card .stat-label { font-size:11px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px; }
+.stat-card .stat-value { font-size:24px; font-weight:700; color:var(--text); }
+.stat-card .stat-sub { font-size:11px; color:var(--muted); margin-top:2px; }
+.stat-card.pink .stat-value { color:var(--accent); }
+.stat-card.green .stat-value { color:var(--green); }
+.stat-card.amber .stat-value { color:var(--amber); }
+.stat-card.violet .stat-value { color:var(--violet); }
+.stat-card.teal .stat-value { color:#0D9488; }
+
+/* Filters */
+.filters-bar { display:flex; align-items:center; gap:10px; padding:18px 28px 0; flex-wrap:wrap; }
+.search-box { flex:1; min-width:200px; position:relative; }
+.search-box input { width:100%; padding:9px 14px 9px 36px; border:1px solid var(--border); border-radius:var(--radius2); font-family:inherit; font-size:13px; outline:none; background:var(--surface); }
+.search-box input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(225,48,108,.1); }
+.search-box::before { content:'\1F50D'; position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:13px; }
+.filter-chip { padding:7px 14px; border-radius:20px; border:1px solid var(--border); background:var(--surface); font-family:inherit; font-size:12px; font-weight:500; cursor:pointer; transition:.15s; color:var(--muted); }
+.filter-chip.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+.filter-chip:hover:not(.active) { background:var(--surface2); }
+.sort-select { padding:7px 12px; border:1px solid var(--border); border-radius:var(--radius2); font-family:inherit; font-size:12px; background:var(--surface); color:var(--text); cursor:pointer; outline:none; }
+
+/* Video grid */
+.videos-container { padding:14px 28px 28px; }
+.video-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:16px; }
+.video-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow); transition:.15s; display:flex; flex-direction:column; }
+.video-card:hover { box-shadow:var(--shadow2); transform:translateY(-2px); }
+.video-thumb { position:relative; width:100%; aspect-ratio:16/9; background:#000; overflow:hidden; cursor:pointer; }
+.video-thumb img { width:100%; height:100%; object-fit:cover; }
+.video-thumb .play-overlay { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.3); opacity:0; transition:.2s; }
+.video-thumb:hover .play-overlay { opacity:1; }
+.play-overlay span { width:48px; height:48px; border-radius:50%; background:rgba(255,255,255,.9); display:flex; align-items:center; justify-content:center; font-size:20px; }
+.video-duration { position:absolute; bottom:8px; right:8px; background:rgba(0,0,0,.75); color:#fff; padding:2px 8px; border-radius:6px; font-size:11px; font-weight:600; }
+.video-info { padding:14px 16px; flex:1; display:flex; flex-direction:column; }
+.video-author { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.video-avatar { width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg,#00F2EA,#FF0050); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:#fff; flex-shrink:0; overflow:hidden; }
+.video-avatar img { width:100%; height:100%; object-fit:cover; }
+.video-author-name { font-size:13px; font-weight:600; }
+.video-author-handle { font-size:11px; color:var(--muted); }
+.verified-badge { display:inline-flex; align-items:center; justify-content:center; width:14px; height:14px; border-radius:50%; background:var(--tiktok2); color:#fff; font-size:8px; margin-left:4px; flex-shrink:0; }
+.video-desc { font-size:13px; line-height:1.6; color:var(--text); margin-bottom:10px; flex:1; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+.video-hashtags { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:10px; }
+.hashtag { font-size:11px; color:var(--accent); font-weight:500; }
+.video-metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; padding-top:10px; border-top:1px solid var(--border); }
+.metric { text-align:center; }
+.metric-value { font-size:14px; font-weight:700; color:var(--text); }
+.metric-label { font-size:9px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; }
+.video-date { font-size:11px; color:var(--muted); margin-top:8px; text-align:right; }
+.video-music { font-size:11px; color:var(--muted); margin-top:6px; display:flex; align-items:center; gap:4px; }
+.video-music::before { content:'\266B'; }
+
+/* Empty / loading states */
+.empty-state { text-align:center; padding:60px 28px; color:var(--muted); }
+.empty-state .empty-icon { font-size:48px; margin-bottom:12px; }
+.empty-state h3 { font-size:16px; font-weight:600; color:var(--text); margin-bottom:6px; }
+.empty-state p { font-size:13px; line-height:1.6; max-width:420px; margin:0 auto; }
+.loading-spinner { display:inline-block; width:24px; height:24px; border:3px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin .8s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* Pagination */
+.pagination { display:flex; align-items:center; justify-content:center; gap:8px; padding:20px 0; }
+.pagination button { width:34px; height:34px; border-radius:8px; border:1px solid var(--border); background:var(--surface); font-family:inherit; font-size:13px; cursor:pointer; transition:.15s; }
+.pagination button.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+.pagination button:hover:not(.active):not(:disabled) { background:var(--surface2); }
+.pagination button:disabled { opacity:.3; cursor:not-allowed; }
+
+/* Toast */
+.toast { position:fixed; bottom:24px; right:24px; padding:12px 20px; border-radius:var(--radius2); font-size:13px; font-weight:500; color:#fff; z-index:999; transform:translateY(80px); opacity:0; transition:.3s; }
+.toast.show { transform:translateY(0); opacity:1; }
+.toast.success { background:var(--green); }
+.toast.error { background:var(--red); }
+.toast.info { background:var(--accent); }
+
+/* Responsive */
+@media (max-width:768px) {
+  .header { padding:14px 16px; }
+  .stats-bar, .filters-bar, .videos-container, .setup-panel { padding-left:16px; padding-right:16px; }
+  .stats-bar { grid-template-columns:repeat(2,1fr); }
+  .video-grid { grid-template-columns:1fr; }
+  .setup-row { flex-direction:column; }
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-logo">T</div>
+  <div class="header-title">
+    <h1>TikTok Video Reviews</h1>
+    <p>Azzurro Hotels — Social Media Monitoring</p>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-outline" onclick="toggleSetup()">&#9881; Settings</button>
+    <button class="btn btn-primary" id="btnFetch" onclick="fetchVideos()">&#x21BB; Fetch Videos</button>
+    <button class="btn btn-tiktok" id="btnRun" onclick="runScraper()">&#9654; Run Scraper</button>
+  </div>
+</div>
+
+<!-- Setup Panel -->
+<div class="setup-panel" id="setupPanel">
+  <div class="setup-row">
+    <div class="setup-field grow">
+      <label>Hashtags (comma-separated)</label>
+      <input type="text" id="hashtags" placeholder="e.g. azzurrohotel, romehotel, luxuryhotel" />
+    </div>
+    <div class="setup-field">
+      <label>Videos per source</label>
+      <input type="number" id="resultsPerPage" value="100" min="1" max="1000" style="width:100px" />
+    </div>
+    <button class="btn btn-primary" onclick="saveSettings()" style="height:38px">Save</button>
+  </div>
+  <div class="setup-row" style="margin-top:10px">
+    <div class="setup-field grow">
+      <label>Profiles / Usernames (comma-separated)</label>
+      <input type="text" id="profiles" placeholder="e.g. azzurrohotel, jackmarriott88" />
+    </div>
+    <div class="setup-field">
+      <label>Profile Sort</label>
+      <select id="profileSorting">
+        <option value="latest">Latest</option>
+        <option value="popular">Popular</option>
+        <option value="oldest">Oldest</option>
+      </select>
+    </div>
+    <div class="setup-field">
+      <label>Exclude Pinned</label>
+      <select id="excludePinnedPosts">
+        <option value="false">No</option>
+        <option value="true">Yes</option>
+      </select>
+    </div>
+  </div>
+  <div class="setup-row" style="margin-top:10px">
+    <div class="setup-field grow">
+      <label>Search Queries (comma-separated)</label>
+      <input type="text" id="searchQueries" placeholder="e.g. Azzurro Hotel Rome, best hotel tiktok" />
+    </div>
+    <div class="setup-field">
+      <label>Search Section</label>
+      <select id="searchSection">
+        <option value="">Top</option>
+        <option value="/video">Videos</option>
+        <option value="/user">Profiles</option>
+      </select>
+    </div>
+    <div class="setup-field">
+      <label>Search Sort</label>
+      <select id="searchSorting">
+        <option value="0">Relevance</option>
+        <option value="1">Most Liked</option>
+        <option value="3">Latest</option>
+      </select>
+    </div>
+  </div>
+  <div class="setup-row" style="margin-top:10px">
+    <div class="setup-field grow">
+      <label>Direct TikTok Video URLs (comma-separated, optional)</label>
+      <input type="text" id="postURLs" placeholder="e.g. https://www.tiktok.com/@user/video/123456789" />
+    </div>
+  </div>
+  <p class="setup-hint">
+    Actor: <strong>TikTok Scraper</strong> by Clockworks (GdWCkxBtKWOsKjdch).
+    <a href="https://console.apify.com/actors/GdWCkxBtKWOsKjdch/input" target="_blank">Open in Apify Console &#8599;</a>
+    &nbsp;|&nbsp; Uses your Apify API token to connect. Enter hashtags, profiles, or search queries then click <strong>Run Scraper</strong>.
+  </p>
+</div>
+
+<!-- Stats -->
+<div class="stats-bar" id="statsBar" style="display:none">
+  <div class="stat-card pink">
+    <div class="stat-label">Total Videos</div>
+    <div class="stat-value" id="statTotal">0</div>
+    <div class="stat-sub" id="statSource">TikTok</div>
+  </div>
+  <div class="stat-card teal">
+    <div class="stat-label">Total Views</div>
+    <div class="stat-value" id="statViews">—</div>
+    <div class="stat-sub">across all videos</div>
+  </div>
+  <div class="stat-card green">
+    <div class="stat-label">Total Likes</div>
+    <div class="stat-value" id="statLikes">—</div>
+    <div class="stat-sub">total engagement</div>
+  </div>
+  <div class="stat-card amber">
+    <div class="stat-label">Total Comments</div>
+    <div class="stat-value" id="statComments">—</div>
+    <div class="stat-sub">audience interaction</div>
+  </div>
+  <div class="stat-card violet">
+    <div class="stat-label">Total Shares</div>
+    <div class="stat-value" id="statShares">—</div>
+    <div class="stat-sub">viral reach</div>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="filters-bar" id="filtersBar" style="display:none">
+  <div class="search-box">
+    <input type="text" id="filterInput" placeholder="Search videos, authors, hashtags..." oninput="applyFilters()" />
+  </div>
+  <button class="filter-chip active" data-eng="all" onclick="setEngFilter('all',this)">All</button>
+  <button class="filter-chip" data-eng="viral" onclick="setEngFilter('viral',this)">Viral (100K+)</button>
+  <button class="filter-chip" data-eng="popular" onclick="setEngFilter('popular',this)">Popular (10K+)</button>
+  <button class="filter-chip" data-eng="growing" onclick="setEngFilter('growing',this)">Growing (1K+)</button>
+  <select class="sort-select" id="sortSelect" onchange="applyFilters()">
+    <option value="views-desc">Most Views</option>
+    <option value="likes-desc">Most Likes</option>
+    <option value="comments-desc">Most Comments</option>
+    <option value="shares-desc">Most Shares</option>
+    <option value="date-desc">Newest First</option>
+    <option value="date-asc">Oldest First</option>
+  </select>
+  <button class="btn btn-outline" onclick="exportCSV()" style="font-size:12px;padding:7px 14px">&#x2B07; Export CSV</button>
+</div>
+
+<!-- Videos -->
+<div class="videos-container" id="videosContainer">
+  <div class="empty-state" id="emptyState">
+    <div class="empty-icon">&#127909;</div>
+    <h3>No TikTok Videos Loaded</h3>
+    <p>Click <strong>Fetch Videos</strong> to load data from your latest scraper run, or click <strong>Settings</strong> to enter search queries and <strong>Run Scraper</strong> to start a new extraction.</p>
+  </div>
+  <div class="video-grid" id="videoGrid" style="display:none"></div>
+  <div class="pagination" id="pagination" style="display:none"></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+const ACTOR_ID = 'GdWCkxBtKWOsKjdch';
+const APIFY_BASE = 'https://api.apify.com/v2';
+const APIFY_TOKEN = 'apify_api_a6YBF80WEatCceAwua8JzwRva447mN0syyhP';
+const PER_PAGE = 12;
+
+let allVideos = [];
+let filteredVideos = [];
+let currentPage = 1;
+let engFilter = 'all';
+let isLoading = false;
+
+// ─── Settings persistence ───
+function loadSettings() {
+  try {
+    const s = JSON.parse(localStorage.getItem('azzurro_tiktok_settings') || '{}');
+    if (s.hashtags) document.getElementById('hashtags').value = s.hashtags;
+    if (s.profiles) document.getElementById('profiles').value = s.profiles;
+    if (s.searchQueries) document.getElementById('searchQueries').value = s.searchQueries;
+    if (s.postURLs) document.getElementById('postURLs').value = s.postURLs;
+    if (s.resultsPerPage) document.getElementById('resultsPerPage').value = s.resultsPerPage;
+    if (s.profileSorting) document.getElementById('profileSorting').value = s.profileSorting;
+    if (s.excludePinnedPosts) document.getElementById('excludePinnedPosts').value = s.excludePinnedPosts;
+    if (s.searchSection) document.getElementById('searchSection').value = s.searchSection;
+    if (s.searchSorting) document.getElementById('searchSorting').value = s.searchSorting;
+  } catch {}
+}
+
+function saveSettings() {
+  const s = {
+    hashtags: document.getElementById('hashtags').value.trim(),
+    profiles: document.getElementById('profiles').value.trim(),
+    searchQueries: document.getElementById('searchQueries').value.trim(),
+    postURLs: document.getElementById('postURLs').value.trim(),
+    resultsPerPage: document.getElementById('resultsPerPage').value,
+    profileSorting: document.getElementById('profileSorting').value,
+    excludePinnedPosts: document.getElementById('excludePinnedPosts').value,
+    searchSection: document.getElementById('searchSection').value,
+    searchSorting: document.getElementById('searchSorting').value,
+  };
+  localStorage.setItem('azzurro_tiktok_settings', JSON.stringify(s));
+  showToast('Settings saved', 'success');
+}
+
+function toggleSetup() {
+  document.getElementById('setupPanel').classList.toggle('hidden');
+}
+
+// ─── Fetch videos from last run ───
+async function fetchVideos() {
+  if (isLoading) return;
+
+  isLoading = true;
+  document.getElementById('btnFetch').disabled = true;
+  document.getElementById('btnFetch').innerHTML = '<span class="loading-spinner"></span> Fetching...';
+
+  try {
+    const url = `${APIFY_BASE}/acts/${ACTOR_ID}/runs/last/dataset/items?token=${APIFY_TOKEN}&limit=1000`;
+    const resp = await fetch(url);
+    if (!resp.ok) {
+      const errText = await resp.text();
+      throw new Error(`API error ${resp.status}: ${errText.slice(0, 200)}`);
+    }
+    const data = await resp.json();
+    if (!Array.isArray(data) || data.length === 0) {
+      showToast('No videos found. Run the scraper first.', 'info');
+      return;
+    }
+    allVideos = normalizeVideos(data);
+    showToast(`Loaded ${allVideos.length} videos`, 'success');
+    renderAll();
+  } catch (e) {
+    console.error(e);
+    showToast('Failed to fetch: ' + e.message, 'error');
+  } finally {
+    isLoading = false;
+    document.getElementById('btnFetch').disabled = false;
+    document.getElementById('btnFetch').innerHTML = '&#x21BB; Fetch Videos';
+  }
+}
+
+// ─── Run scraper ───
+async function runScraper() {
+  const tags = document.getElementById('hashtags').value.trim();
+  const profiles = document.getElementById('profiles').value.trim();
+  const queries = document.getElementById('searchQueries').value.trim();
+  const urls = document.getElementById('postURLs').value.trim();
+
+  if (!tags && !profiles && !queries && !urls) {
+    showToast('Please enter hashtags, profiles, search queries, or video URLs in Settings', 'error');
+    return;
+  }
+
+  isLoading = true;
+  document.getElementById('btnRun').disabled = true;
+  document.getElementById('btnRun').innerHTML = '<span class="loading-spinner"></span> Running...';
+  showToast('Scraper started — this may take a few minutes...', 'info');
+
+  try {
+    const resultsPerPage = parseInt(document.getElementById('resultsPerPage').value) || 100;
+
+    // Build input matching exact Apify actor schema
+    const input = {
+      resultsPerPage,
+      shouldDownloadCovers: false,
+      shouldDownloadVideos: false,
+      shouldDownloadSlideshowImages: false,
+      shouldDownloadAvatars: false,
+      shouldDownloadMusicCovers: false,
+    };
+
+    // Hashtags
+    if (tags) {
+      input.hashtags = tags.split(/[,\n]/).map(h => h.trim().replace(/^#/, '')).filter(Boolean);
+    }
+
+    // Profiles (usernames)
+    if (profiles) {
+      input.profiles = profiles.split(/[,\n]/).map(p => p.trim().replace(/^@/, '')).filter(Boolean);
+      input.profileSorting = document.getElementById('profileSorting').value;
+      input.profileScrapeSections = ['videos'];
+      input.excludePinnedPosts = document.getElementById('excludePinnedPosts').value === 'true';
+    }
+
+    // Search queries
+    if (queries) {
+      input.searchQueries = queries.split(/[,\n]/).map(q => q.trim()).filter(Boolean);
+      input.searchSection = document.getElementById('searchSection').value;
+      input.searchSorting = document.getElementById('searchSorting').value;
+    }
+
+    // Direct video URLs
+    if (urls) {
+      input.postURLs = urls.split(/[,\n]/).map(u => u.trim()).filter(Boolean);
+    }
+
+    console.log('Apify input:', JSON.stringify(input, null, 2));
+
+    const runUrl = `${APIFY_BASE}/acts/${ACTOR_ID}/run-sync-get-dataset-items?token=${APIFY_TOKEN}&timeout=300`;
+    const resp = await fetch(runUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(input),
+    });
+    if (!resp.ok) {
+      const errText = await resp.text();
+      throw new Error(`API error ${resp.status}: ${errText.slice(0, 200)}`);
+    }
+    const data = await resp.json();
+    if (!Array.isArray(data) || data.length === 0) {
+      showToast('Scraper finished but returned no videos. Check your search terms.', 'info');
+      return;
+    }
+    allVideos = normalizeVideos(data);
+    showToast(`Scraped ${allVideos.length} videos successfully!`, 'success');
+    renderAll();
+  } catch (e) {
+    console.error(e);
+    if (e.message.includes('timeout') || e.message.includes('504')) {
+      showToast('Scraper is still running. Wait a minute then click Fetch Videos.', 'info');
+    } else {
+      showToast('Scraper failed: ' + e.message, 'error');
+    }
+  } finally {
+    isLoading = false;
+    document.getElementById('btnRun').disabled = false;
+    document.getElementById('btnRun').innerHTML = '&#9654; Run Scraper';
+  }
+}
+
+// ─── Normalize video data (matches exact Apify clockworks/tiktok-scraper output) ───
+function normalizeVideos(raw) {
+  return raw.map(r => {
+    // Engagement metrics (exact field names from API)
+    const views = parseInt(r.playCount ?? 0);
+    const likes = parseInt(r.diggCount ?? 0);
+    const comments = parseInt(r.commentCount ?? 0);
+    const shares = parseInt(r.shareCount ?? 0);
+    const saves = parseInt(r.collectCount ?? 0);
+    const reposts = parseInt(r.repostCount ?? 0);
+
+    // Video info
+    const desc = r.text ?? '';
+    const textLanguage = r.textLanguage ?? '';
+    const date = r.createTimeISO ?? '';
+    const duration = r.videoMeta?.duration ?? 0;
+    const videoUrl = r.webVideoUrl ?? '';
+    const videoHeight = r.videoMeta?.height ?? 0;
+    const videoWidth = r.videoMeta?.width ?? 0;
+
+    // Cover / thumbnail (coverUrl from videoMeta)
+    const cover = r.videoMeta?.coverUrl ?? r.covers?.default ?? r.covers?.dynamic ?? '';
+
+    // Author info (from authorMeta)
+    const authorName = r.authorMeta?.nickName ?? r.authorMeta?.name ?? '';
+    const authorHandle = r.authorMeta?.name ?? '';
+    const authorAvatar = r.authorMeta?.avatar ?? '';
+    const authorVerified = r.authorMeta?.verified ?? false;
+    const authorSignature = r.authorMeta?.signature ?? '';
+    const authorProfileUrl = r.authorMeta?.profileUrl ?? '';
+
+    // Hashtags (array of objects with .name)
+    let hashtags = [];
+    if (Array.isArray(r.hashtags)) {
+      hashtags = r.hashtags.map(h => typeof h === 'string' ? h : (h.name ?? '')).filter(Boolean);
+    }
+
+    // Music (from musicMeta)
+    const musicName = r.musicMeta?.musicName ?? '';
+    const musicAuthor = r.musicMeta?.musicAuthor ?? '';
+    const musicOriginal = r.musicMeta?.musicOriginal ?? false;
+
+    // Location (from locationMeta)
+    const locationName = r.locationMeta?.locationName ?? '';
+    const locationAddress = r.locationMeta?.address ?? '';
+
+    // Flags
+    const isAd = r.isAd ?? false;
+    const isSlideshow = r.isSlideshow ?? false;
+    const isPinned = r.isPinned ?? false;
+    const isSponsored = r.isSponsored ?? false;
+
+    // Search context
+    const searchInput = r.input ?? '';
+    const searchHashtag = r.searchHashtag?.name ?? '';
+
+    return {
+      views, likes, comments, shares, saves, reposts,
+      desc, textLanguage, date, duration, videoUrl, videoHeight, videoWidth, cover,
+      authorName, authorHandle, authorAvatar, authorVerified, authorSignature, authorProfileUrl,
+      hashtags, musicName, musicAuthor, musicOriginal,
+      locationName, locationAddress,
+      isAd, isSlideshow, isPinned, isSponsored,
+      searchInput, searchHashtag,
+      _raw: r
+    };
+  }).sort((a, b) => b.views - a.views);
+}
+
+// ─── Render ───
+function renderAll() {
+  document.getElementById('statsBar').style.display = 'grid';
+  document.getElementById('filtersBar').style.display = 'flex';
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('videoGrid').style.display = 'grid';
+  document.getElementById('setupPanel').classList.add('hidden');
+
+  renderStats();
+  applyFilters();
+}
+
+function renderStats() {
+  const n = allVideos.length;
+  const totalViews = allVideos.reduce((s, v) => s + v.views, 0);
+  const totalLikes = allVideos.reduce((s, v) => s + v.likes, 0);
+  const totalComments = allVideos.reduce((s, v) => s + v.comments, 0);
+  const totalShares = allVideos.reduce((s, v) => s + v.shares, 0);
+
+  document.getElementById('statTotal').textContent = n.toLocaleString();
+  document.getElementById('statViews').textContent = formatNum(totalViews);
+  document.getElementById('statLikes').textContent = formatNum(totalLikes);
+  document.getElementById('statComments').textContent = formatNum(totalComments);
+  document.getElementById('statShares').textContent = formatNum(totalShares);
+}
+
+// ─── Filtering & sorting ───
+function setEngFilter(val, el) {
+  engFilter = val;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  currentPage = 1;
+  applyFilters();
+}
+
+function applyFilters() {
+  const query = document.getElementById('filterInput').value.toLowerCase();
+  const sort = document.getElementById('sortSelect').value;
+
+  filteredVideos = allVideos.filter(v => {
+    if (engFilter === 'viral' && v.views < 100000) return false;
+    if (engFilter === 'popular' && (v.views < 10000 || v.views >= 100000)) return false;
+    if (engFilter === 'growing' && (v.views < 1000 || v.views >= 10000)) return false;
+    if (query) {
+      const haystack = [v.desc, v.authorName, v.authorHandle, ...v.hashtags, v.musicName].join(' ').toLowerCase();
+      if (!haystack.includes(query)) return false;
+    }
+    return true;
+  });
+
+  filteredVideos.sort((a, b) => {
+    switch (sort) {
+      case 'likes-desc': return b.likes - a.likes;
+      case 'comments-desc': return b.comments - a.comments;
+      case 'shares-desc': return b.shares - a.shares;
+      case 'date-desc': try { return new Date(b.date) - new Date(a.date); } catch { return 0; }
+      case 'date-asc': try { return new Date(a.date) - new Date(b.date); } catch { return 0; }
+      default: return b.views - a.views;
+    }
+  });
+
+  renderPage();
+}
+
+function renderPage() {
+  const grid = document.getElementById('videoGrid');
+  const total = filteredVideos.length;
+  const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
+  if (currentPage > totalPages) currentPage = totalPages;
+
+  const start = (currentPage - 1) * PER_PAGE;
+  const page = filteredVideos.slice(start, start + PER_PAGE);
+
+  if (total === 0) {
+    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">&#128270;</div><h3>No Matching Videos</h3><p>Try adjusting your search or filters.</p></div>';
+    document.getElementById('pagination').style.display = 'none';
+    return;
+  }
+
+  grid.innerHTML = page.map(v => {
+    const hashtagsHtml = v.hashtags.slice(0, 5).map(h => `<span class="hashtag">#${esc(h)}</span>`).join(' ');
+    const durationStr = v.duration ? formatDuration(v.duration) : '';
+    const dateStr = formatDate(v.date);
+    const initial = (v.authorName || v.authorHandle || '?').charAt(0).toUpperCase();
+    const avatarHtml = v.authorAvatar
+      ? `<img src="${esc(v.authorAvatar)}" alt="" onerror="this.parentNode.textContent='${initial}'">`
+      : initial;
+
+    const locationHtml = v.locationName
+      ? `<div class="video-music" style="margin-top:4px">&#128205; ${esc(v.locationName)}${v.locationAddress ? ' — ' + esc(v.locationAddress) : ''}</div>`
+      : '';
+
+    const badges = [];
+    if (v.isAd || v.isSponsored) badges.push('<span class="tag" style="background:#FEF2F2;color:#DC2626;border-color:rgba(220,38,38,.15)">Ad</span>');
+    if (v.isPinned) badges.push('<span class="tag" style="background:#F5F3FF;color:#7C3AED;border-color:rgba(124,58,237,.15)">Pinned</span>');
+    if (v.isSlideshow) badges.push('<span class="tag" style="background:#EFF6FF;color:#0284C7;border-color:rgba(2,132,199,.15)">Slideshow</span>');
+
+    return `<div class="video-card">
+      <div class="video-thumb" onclick="openVideo('${esc(v.videoUrl)}')">
+        ${v.cover ? `<img src="${esc(v.cover)}" alt="" onerror="this.style.display='none'">` : ''}
+        <div class="play-overlay"><span>&#9654;</span></div>
+        ${durationStr ? `<span class="video-duration">${durationStr}</span>` : ''}
+      </div>
+      <div class="video-info">
+        <div class="video-author">
+          <div class="video-avatar">${avatarHtml}</div>
+          <div>
+            <div class="video-author-name">${esc(v.authorName || v.authorHandle)}${v.authorVerified ? '<span class="verified-badge">&#10003;</span>' : ''}</div>
+            ${v.authorHandle ? `<div class="video-author-handle">@${esc(v.authorHandle)}</div>` : ''}
+          </div>
+        </div>
+        <div class="video-desc" title="${esc(v.desc)}">${esc(v.desc)}</div>
+        ${hashtagsHtml ? `<div class="video-hashtags">${hashtagsHtml}${badges.length ? ' ' + badges.join(' ') : ''}</div>` : (badges.length ? `<div class="video-hashtags">${badges.join(' ')}</div>` : '')}
+        ${v.musicName ? `<div class="video-music">${esc(v.musicName)}${v.musicAuthor ? ' — ' + esc(v.musicAuthor) : ''}${v.musicOriginal ? ' (original)' : ''}</div>` : ''}
+        ${locationHtml}
+        <div class="video-metrics">
+          <div class="metric"><div class="metric-value">${formatNum(v.views)}</div><div class="metric-label">Views</div></div>
+          <div class="metric"><div class="metric-value">${formatNum(v.likes)}</div><div class="metric-label">Likes</div></div>
+          <div class="metric"><div class="metric-value">${formatNum(v.comments)}</div><div class="metric-label">Comments</div></div>
+          <div class="metric"><div class="metric-value">${formatNum(v.shares)}</div><div class="metric-label">Shares</div></div>
+        </div>
+        ${dateStr ? `<div class="video-date">${dateStr}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  // Pagination
+  const pagEl = document.getElementById('pagination');
+  if (totalPages <= 1) {
+    pagEl.style.display = 'none';
+    return;
+  }
+  pagEl.style.display = 'flex';
+  let pagHTML = `<button ${currentPage === 1 ? 'disabled' : ''} onclick="goPage(${currentPage - 1})">&laquo;</button>`;
+  const range = getPageRange(currentPage, totalPages);
+  range.forEach(p => {
+    if (p === '...') pagHTML += `<span style="color:var(--muted)">...</span>`;
+    else pagHTML += `<button class="${p === currentPage ? 'active' : ''}" onclick="goPage(${p})">${p}</button>`;
+  });
+  pagHTML += `<button ${currentPage === totalPages ? 'disabled' : ''} onclick="goPage(${currentPage + 1})">&raquo;</button>`;
+  pagEl.innerHTML = pagHTML;
+}
+
+function goPage(p) {
+  currentPage = p;
+  renderPage();
+  document.getElementById('videoGrid').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function getPageRange(current, total) {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const pages = [];
+  pages.push(1);
+  if (current > 3) pages.push('...');
+  for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) pages.push(i);
+  if (current < total - 2) pages.push('...');
+  pages.push(total);
+  return pages;
+}
+
+function openVideo(url) {
+  if (url) window.open(url, '_blank');
+}
+
+// ─── Export CSV ───
+function exportCSV() {
+  if (!filteredVideos.length) { showToast('No videos to export', 'info'); return; }
+  const headers = ['Author', 'Handle', 'Description', 'Views', 'Likes', 'Comments', 'Shares', 'Saves', 'Reposts', 'Duration (s)', 'Date', 'Hashtags', 'Music', 'Location', 'Language', 'URL'];
+  const rows = filteredVideos.map(v => [
+    csvEsc(v.authorName), csvEsc(v.authorHandle), csvEsc(v.desc),
+    v.views, v.likes, v.comments, v.shares, v.saves, v.reposts, v.duration,
+    csvEsc(v.date), csvEsc(v.hashtags.join(', ')), csvEsc(v.musicName),
+    csvEsc(v.locationName), csvEsc(v.textLanguage), csvEsc(v.videoUrl),
+  ]);
+  const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `tiktok-reviews-${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  showToast('CSV exported', 'success');
+}
+function csvEsc(v) { v = String(v || ''); return v.includes(',') || v.includes('"') || v.includes('\n') ? '"' + v.replace(/"/g, '""') + '"' : v; }
+
+// ─── Helpers ───
+function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+function formatNum(n) {
+  if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+  if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+  return n.toLocaleString();
+}
+
+function formatDuration(secs) {
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  return m + ':' + String(s).padStart(2, '0');
+}
+
+function formatDate(d) {
+  if (!d) return '';
+  try { return new Date(d).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }); }
+  catch { return d; }
+}
+
+function showToast(msg, type) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast ' + type + ' show';
+  clearTimeout(el._timer);
+  el._timer = setTimeout(() => el.classList.remove('show'), 4000);
+}
+
+// ─── Init ───
+loadSettings();
+</script>
+</body>
+</html>
