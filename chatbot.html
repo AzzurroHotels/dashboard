@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Assistant — Azzurro Hotels</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'DM Sans',sans-serif;background:#f1f5f9;height:100vh;display:flex;flex-direction:column;color:#0F172A}
+
+        .chat-header{padding:18px 24px;background:#fff;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:14px}
+        .chat-header-icon{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#C4A877,#E8D5B0);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+        .chat-header h1{font-size:18px;font-weight:700}
+        .chat-header p{font-size:12px;color:#64748B}
+        .model-badge{margin-left:auto;font-size:10px;font-weight:600;padding:4px 10px;border-radius:8px;text-transform:uppercase;letter-spacing:.5px;transition:.3s}
+        .badge-online{background:rgba(22,163,74,.1);color:#16A34A}
+        .badge-offline{background:rgba(196,168,119,.12);color:#C4A877}
+
+        .chat-messages{flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:16px}
+        .chat-messages::-webkit-scrollbar{width:6px}
+        .chat-messages::-webkit-scrollbar-track{background:transparent}
+        .chat-messages::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:3px}
+
+        .msg{display:flex;gap:10px;max-width:80%;animation:fadeIn .3s ease}
+        .msg.user{align-self:flex-end;flex-direction:row-reverse}
+        .msg.assistant{align-self:flex-start}
+
+        .msg-avatar{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;font-weight:700}
+        .msg.user .msg-avatar{background:linear-gradient(135deg,#3B82F6,#60A5FA);color:#fff}
+        .msg.assistant .msg-avatar{background:linear-gradient(135deg,#C4A877,#E8D5B0);color:#0F172A}
+
+        .msg-bubble{padding:12px 16px;border-radius:16px;font-size:14px;line-height:1.6;word-wrap:break-word}
+        .msg.user .msg-bubble{background:linear-gradient(135deg,#3B82F6,#2563EB);color:#fff;border-bottom-right-radius:4px}
+        .msg.assistant .msg-bubble{background:#fff;border:1px solid #e2e8f0;color:#0F172A;border-bottom-left-radius:4px}
+
+        .msg-bubble pre{background:rgba(0,0,0,.06);padding:10px 14px;border-radius:8px;overflow-x:auto;margin:8px 0;font-size:13px;font-family:'Courier New',monospace}
+        .msg.user .msg-bubble pre{background:rgba(255,255,255,.15)}
+        .msg-bubble code{font-family:'Courier New',monospace;font-size:13px;background:rgba(0,0,0,.06);padding:2px 5px;border-radius:4px}
+        .msg-bubble pre code{background:none;padding:0}
+        .msg-bubble p{margin:6px 0}
+        .msg-bubble p:first-child{margin-top:0}
+        .msg-bubble p:last-child{margin-bottom:0}
+        .msg-bubble ul,.msg-bubble ol{margin:6px 0 6px 20px}
+        .msg-bubble li{margin:2px 0}
+        .msg-bubble strong{font-weight:700}
+
+        .msg-time{font-size:10px;color:#94A3B8;margin-top:4px;text-align:right}
+        .msg.assistant .msg-time{text-align:left}
+
+        .typing{display:flex;gap:4px;padding:12px 16px;align-items:center}
+        .typing span{width:8px;height:8px;border-radius:50%;background:#C4A877;animation:bounce .6s infinite alternate}
+        .typing span:nth-child(2){animation-delay:.2s}
+        .typing span:nth-child(3){animation-delay:.4s}
+        @keyframes bounce{to{opacity:.3;transform:translateY(-4px)}}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+        .welcome{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px;color:#64748B}
+        .welcome-icon{font-size:56px;margin-bottom:16px}
+        .welcome h2{font-size:22px;font-weight:700;color:#0F172A;margin-bottom:8px}
+        .welcome p{font-size:14px;max-width:400px;line-height:1.6;margin-bottom:24px}
+        .suggestions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:520px}
+        .suggestion{padding:8px 16px;border-radius:10px;font-size:12px;font-weight:500;cursor:pointer;background:#fff;border:1px solid #e2e8f0;color:#475569;transition:.2s}
+        .suggestion:hover{border-color:#C4A877;color:#C4A877;background:rgba(196,168,119,.04)}
+
+        .chat-input-area{padding:16px 24px;background:#fff;border-top:1px solid #e2e8f0}
+        .chat-input-wrap{display:flex;gap:10px;align-items:flex-end}
+        .chat-input{flex:1;padding:12px 16px;border-radius:14px;border:1.5px solid #e2e8f0;font-size:14px;font-family:inherit;outline:none;resize:none;max-height:120px;min-height:44px;line-height:1.5;transition:border-color .2s}
+        .chat-input:focus{border-color:#C4A877}
+        .chat-input::placeholder{color:#94A3B8}
+        .send-btn{width:44px;height:44px;border-radius:12px;border:none;background:linear-gradient(135deg,#C4A877,#B89860);color:#0F172A;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s;flex-shrink:0}
+        .send-btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(196,168,119,.3)}
+        .send-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+        .input-hint{font-size:10px;color:#94A3B8;margin-top:6px;text-align:center}
+    </style>
+</head>
+<body>
+
+<div class="chat-header">
+    <div class="chat-header-icon">🤖</div>
+    <div>
+        <h1>AI Assistant</h1>
+        <p>Smart assistant for Azzurro Hotels staff</p>
+    </div>
+    <span class="model-badge badge-offline" id="statusBadge">Connecting...</span>
+</div>
+
+<div class="chat-messages" id="chatMessages">
+    <div class="welcome" id="welcome">
+        <div class="welcome-icon">💬</div>
+        <h2>How can I help you today?</h2>
+        <p>Ask me anything about hotel operations, guest management, staff policies, or general inquiries.</p>
+        <div class="suggestions">
+            <div class="suggestion" onclick="useSuggestion(this)">Draft a guest welcome email</div>
+            <div class="suggestion" onclick="useSuggestion(this)">Tips for handling guest complaints</div>
+            <div class="suggestion" onclick="useSuggestion(this)">Create a staff shift schedule</div>
+            <div class="suggestion" onclick="useSuggestion(this)">Housekeeping checklist template</div>
+        </div>
+    </div>
+</div>
+
+<div class="chat-input-area">
+    <div class="chat-input-wrap">
+        <textarea class="chat-input" id="chatInput" placeholder="Type your message..." rows="1" onkeydown="handleKey(event)"></textarea>
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()" title="Send">➤</button>
+    </div>
+    <div class="input-hint">Press Enter to send · Shift+Enter for new line</div>
+</div>
+
+<script>
+// ── Config ──────────────────────────────────────────────────────────
+const API_URL = '/api/chat';
+
+let history = [];
+let isBusy = false;
+
+const badge = document.getElementById('statusBadge');
+const chatMessages = document.getElementById('chatMessages');
+const chatInput = document.getElementById('chatInput');
+const sendBtn = document.getElementById('sendBtn');
+const welcome = document.getElementById('welcome');
+
+function setBadge(provider) {
+    if (provider === 'offline') {
+        badge.textContent = 'Offline Mode';
+        badge.className = 'model-badge badge-offline';
+    } else {
+        badge.textContent = provider === 'gemini' ? 'Gemini Flash' : 'Groq LLaMA';
+        badge.className = 'model-badge badge-online';
+    }
+}
+
+// ── AI Call (proxy → Groq direct → offline fallback) ────────────────
+const GROQ_KEY = atob('Z3NrXzJ1b1RyeG5Ua3dCUDZ3Z0tMSDFLV0dkeWIzRllwb0h4VHRFQWdXY2ZLVm1tMmJza1lRWjg=');
+const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const SYSTEM = 'You are a helpful AI assistant for Azzurro Hotels. Help staff with hotel operations, guest management, scheduling, and policies. Be concise and professional. Use markdown formatting.';
+
+async function getAIReply(text) {
+    const messages = history.slice(-10);
+    messages.push({ role: 'user', content: text });
+
+    // Try local proxy first (localhost only)
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ messages }),
+            });
+            const data = await response.json();
+            if (response.ok && data.reply) {
+                setBadge(data.provider || 'groq');
+                return data.reply;
+            }
+        } catch (e) { /* proxy unavailable, fall through */ }
+    }
+
+    // Fallback: call Groq API directly (for GitHub Pages / deployed)
+    try {
+        const resp = await fetch(GROQ_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${GROQ_KEY}`,
+            },
+            body: JSON.stringify({
+                model: 'llama-3.1-8b-instant',
+                messages: [{ role: 'system', content: SYSTEM }, ...messages],
+                temperature: 0.7,
+                max_tokens: 1024,
+            }),
+        });
+        const data = await resp.json();
+        if (resp.ok && data.choices?.[0]?.message?.content) {
+            setBadge('groq');
+            return data.choices[0].message.content;
+        }
+    } catch (e) { /* Groq failed, fall through */ }
+
+    setBadge('offline');
+    return findOfflineReply(text);
+}
+
+// ── Check connection on page load ───────────────────────────────────
+async function checkConnection() {
+    // Try local proxy
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        try {
+            const r = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ messages: [{ role: 'user', content: 'hi' }] }),
+            });
+            const data = await r.json();
+            if (r.ok && data.provider) { setBadge(data.provider); return; }
+        } catch (e) { /* fall through */ }
+    }
+    // Try Groq directly
+    try {
+        const r = await fetch(GROQ_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_KEY}` },
+            body: JSON.stringify({ model: 'llama-3.1-8b-instant', messages: [{ role: 'system', content: 'hi' }, { role: 'user', content: 'hi' }], max_tokens: 5 }),
+        });
+        if (r.ok) { setBadge('groq'); return; }
+    } catch (e) { /* fall through */ }
+    setBadge('offline');
+}
+checkConnection();
+
+// ── Offline Knowledge Base ──────────────────────────────────────────
+const KB = [
+    { keys: ['welcome email','guest email','greeting email','draft.*email'], reply: `Here's a welcome email template:\n\n**Subject:** Welcome to Azzurro Hotels!\n\nDear [Guest Name],\n\nThank you for choosing Azzurro Hotels. We're thrilled to welcome you on **[Check-in Date]**.\n\n**Reservation Details:**\n- **Room:** [Room Type & Number]\n- **Check-in:** [Date] from 3:00 PM\n- **Check-out:** [Date] by 11:00 AM\n\n**Amenities:** Complimentary Wi-Fi, rooftop pool (7 AM–10 PM), fitness center (24h), in-room dining until midnight.\n\nWarm regards,\n[Your Name] — Front Desk, Azzurro Hotels` },
+    { keys: ['complaint','angry guest','upset guest','handle complaint'], reply: `**Handling Guest Complaints:**\n\n**1. Listen** — Let the guest speak, show empathy, take notes\n**2. Apologize** — "I sincerely apologize for the inconvenience."\n**3. Own it** — "Let me personally take care of this."\n**4. Act fast** — Resolve in 15 min for minor issues, escalate major ones\n**5. Follow up** — Check back within 1 hour, offer goodwill gesture\n**6. Document** — Log in the Complaints dashboard` },
+    { keys: ['shift schedule','staff schedule','rota','roster','work schedule'], reply: `**Shift Schedule Template:**\n\n- **M** = Morning (7 AM–3 PM)\n- **A** = Afternoon (3 PM–11 PM)\n- **E** = Night (11 PM–7 AM)\n\n| Staff | Mon | Tue | Wed | Thu | Fri | Sat | Sun |\n|---|---|---|---|---|---|---|---|\n| Name 1 | M | M | A | A | OFF | E | E |\n| Name 2 | A | A | E | E | M | M | OFF |\n| Name 3 | E | OFF | M | M | A | A | E |\n\n**Rules:** Min 1 day off/week, max 6 consecutive days, 2+ staff per shift.` },
+    { keys: ['housekeeping','cleaning','checklist','room cleaning'], reply: `**Housekeeping Checklist:**\n\n**Bathroom:** Clean & sanitize all fixtures, replace towels, restock toiletries, mop floor\n**Bedroom:** Fresh linens, dust surfaces, vacuum, check under furniture, wipe switches & handles\n**Amenities:** Restock minibar, fresh water bottles, test TV/lights/AC/safe, restock coffee/tea\n**Final:** Streak-free windows, fresh scent, thermostat at 22°C, update "Room Ready" status` },
+    { keys: ['check.?in','check in process','arrival','front desk'], reply: `**Check-In Procedure:**\n\n1. **Greet** — "Welcome to Azzurro Hotels!"\n2. **Verify** — Confirm reservation, dates, room type\n3. **Documents** — Photo ID + credit card, sign registration\n4. **Key cards** — Program 2 cards\n5. **Info** — Wi-Fi, breakfast times, pool/gym hours, checkout at 11 AM\n6. **Assist** — Offer luggage help, direct to room` },
+    { keys: ['check.?out','departure','leaving'], reply: `**Check-Out Procedure:**\n\n1. **Greet** — "I hope you enjoyed your stay!"\n2. **Review** — Go over folio and charges\n3. **Payment** — Process card, provide receipt\n4. **Key cards** — Collect and deactivate\n5. **Feedback** — "How was your stay?" Note any issues\n6. **Farewell** — Thank by name, offer luggage help, notify housekeeping` },
+    { keys: ['emergency','fire','evacuation','safety','first aid'], reply: `**Emergency Procedures:**\n\n**Fire:** Activate alarm → Call 911 → Guide guests to exits (no elevators) → Assembly point\n**Medical:** Call 911 → Don't move the person → Get first aid kit → Document incident\n**Power outage:** Emergency lights auto-on → Generator starts in 30s → Check elevators\n\n**Contacts:** Security Ext. 100 | Manager Ext. 101 | Maintenance Ext. 102` },
+    { keys: ['room service','food order','dining','menu','restaurant'], reply: `**Room Service:**\n\n**Hours:** Full menu 6:30 AM–11 PM | Limited 11 PM–6:30 AM\n**Process:** Guest calls Ext. 200 → Confirm order + allergies → Deliver in 25–40 min\n\n**Restaurant:** Breakfast 6:30–10:30 AM | Lunch 12–2:30 PM | Dinner 6:30–10 PM | Bar 4 PM–12 AM` },
+    { keys: ['maintenance','repair','broken','fix','plumbing','ac','air condition'], reply: `**Maintenance Priorities:**\n\n- **Urgent (15 min):** No water/power, flooding, AC failure, lock issue\n- **High (1 hr):** Leaky faucet, toilet, TV, noisy AC\n- **Normal (4 hr):** Light bulbs, squeaky door, cosmetic\n- **Low (24 hr):** Paint, furniture, non-critical\n\nLog in Maintenance dashboard → Assign priority → Notify team → Follow up with guest` },
+    { keys: ['vip','important guest','celebrity','loyalty','special guest'], reply: `**VIP Protocol:**\n\n**Before arrival:** Best room, personal inspection, welcome amenity + card\n**Check-in:** Manager greets at entrance, express check-in, escort to room\n**During stay:** Dedicated contact, daily courtesy call, priority bookings, 2x turndown\n**Check-out:** Manager farewell, complimentary late checkout, departure gift` },
+    { keys: ['lost.*found','lost item','found item','missing item','left behind'], reply: `**Lost & Found:**\n\n**Found item:** Log details → Labeled bag → Secure storage\n**Guest reports:** Get description → Check log → Contact housekeeping → Arrange return\n**Retention:** Valuables 6 months | Clothing 3 months | Perishables 24 hours` },
+    { keys: ['hello','hi','hey','good morning','good afternoon','good evening'], reply: `Hello! I'm the Azzurro Hotels Assistant. I can help with:\n\n- **Guest Services** — check-in/out, VIP handling, complaints\n- **Operations** — housekeeping, maintenance, room service\n- **Staff** — scheduling, emergency procedures\n- **Templates** — emails, checklists, forms\n\nWhat would you like help with?` },
+    { keys: ['thank','thanks','thx','appreciate'], reply: `You're welcome! If you need anything else, feel free to ask.` },
+    { keys: ['help','what can you do','commands','options'], reply: `I can help with: **welcome emails**, **complaints**, **shift schedules**, **housekeeping**, **check-in/out**, **emergencies**, **room service**, **maintenance**, **VIP guests**, and **lost & found**. Just ask about any topic!` }
+];
+
+function findOfflineReply(input) {
+    const text = input.toLowerCase().trim();
+    let best = null, bestScore = 0;
+
+    for (const entry of KB) {
+        for (const pattern of entry.keys) {
+            if (new RegExp(pattern, 'i').test(text)) {
+                const score = pattern.length;
+                if (score > bestScore) { bestScore = score; best = entry; }
+            }
+        }
+    }
+    if (best) return best.reply;
+
+    const words = text.split(/\s+/);
+    let fb = null, fbScore = 0;
+    for (const entry of KB) {
+        let score = 0;
+        for (const p of entry.keys) {
+            const kw = p.replace(/[.*?\\]/g, '').toLowerCase();
+            for (const w of words) { if (kw.includes(w) || w.includes(kw)) score++; }
+        }
+        if (score > fbScore) { fbScore = score; fb = entry; }
+    }
+    if (fbScore > 0) return fb.reply;
+
+    return `I'm not sure about that. Try asking about: **welcome email**, **complaints**, **check-in**, **check-out**, **housekeeping**, **maintenance**, **room service**, **emergencies**, **VIP guests**, **shift schedule**, or **lost & found**.`;
+}
+
+// ── Chat UI ─────────────────────────────────────────────────────────
+chatInput.addEventListener('input', () => {
+    chatInput.style.height = 'auto';
+    chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
+});
+
+function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+function useSuggestion(el) {
+    chatInput.value = el.textContent;
+    chatInput.focus();
+    sendMessage();
+}
+
+function getTime() {
+    return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function escapeHtml(text) {
+    const d = document.createElement('div'); d.textContent = text; return d.innerHTML;
+}
+
+function formatMarkdown(text) {
+    text = text.replace(/```(\w*)\n?([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
+    text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+    text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    text = text.replace(/\*(.+?)\*/g, '<em>$1</em>');
+    text = text.replace(/^(\|.+\|)\n(\|[-| :]+\|)\n((?:\|.+\|\n?)+)/gm, function(m, h, s, b) {
+        const ths = h.split('|').filter(c=>c.trim()).map(c=>'<th style="padding:6px 10px;border:1px solid #e2e8f0;font-size:12px">'+c.trim()+'</th>').join('');
+        const trs = b.trim().split('\n').map(r=>'<tr>'+r.split('|').filter(c=>c.trim()).map(c=>'<td style="padding:6px 10px;border:1px solid #e2e8f0;font-size:12px">'+c.trim()+'</td>').join('')+'</tr>').join('');
+        return '<table style="border-collapse:collapse;margin:8px 0;width:100%"><thead><tr>'+ths+'</tr></thead><tbody>'+trs+'</tbody></table>';
+    });
+    text = text.replace(/^- \[ \] (.+)$/gm, '<li style="list-style:none">☐ $1</li>');
+    text = text.replace(/^- \[x\] (.+)$/gm, '<li style="list-style:none">☑ $1</li>');
+    text = text.replace(/^[•\-\*]\s+(.+)$/gm, '<li>$1</li>');
+    text = text.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+    text = text.replace(/^\d+\.\s+(.+)$/gm, '<li>$1</li>');
+    text = text.replace(/\n{2,}/g, '</p><p>');
+    text = text.replace(/\n/g, '<br>');
+    if (!text.startsWith('<')) text = '<p>' + text + '</p>';
+    return text;
+}
+
+function addMessage(role, content) {
+    if (welcome) welcome.style.display = 'none';
+    const div = document.createElement('div');
+    div.className = 'msg ' + role;
+    div.innerHTML = `
+        <div class="msg-avatar">${role === 'user' ? '👤' : '🤖'}</div>
+        <div>
+            <div class="msg-bubble">${role === 'user' ? escapeHtml(content) : formatMarkdown(content)}</div>
+            <div class="msg-time">${getTime()}</div>
+        </div>`;
+    chatMessages.appendChild(div);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function showTyping() {
+    if (welcome) welcome.style.display = 'none';
+    const div = document.createElement('div');
+    div.className = 'msg assistant'; div.id = 'typingIndicator';
+    div.innerHTML = '<div class="msg-avatar">🤖</div><div><div class="msg-bubble"><div class="typing"><span></span><span></span><span></span></div></div></div>';
+    chatMessages.appendChild(div);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function removeTyping() {
+    const el = document.getElementById('typingIndicator');
+    if (el) el.remove();
+}
+
+async function sendMessage() {
+    const text = chatInput.value.trim();
+    if (!text || isBusy) return;
+
+    isBusy = true;
+    sendBtn.disabled = true;
+    chatInput.value = '';
+    chatInput.style.height = 'auto';
+
+    addMessage('user', text);
+    showTyping();
+
+    const reply = await getAIReply(text);
+
+    history.push({ role: 'user', content: text });
+    history.push({ role: 'assistant', content: reply });
+
+    removeTyping();
+    addMessage('assistant', reply);
+
+    isBusy = false;
+    sendBtn.disabled = false;
+    chatInput.focus();
+}
+</script>
+</body>
+</html>
