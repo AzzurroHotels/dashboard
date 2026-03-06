@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>PM Tool — Workspace</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+<div class="page">
+
+  <header>
+    <span>Team Dashboard</span>
+
+    <div class="header-actions">
+      <div>
+        <input type="text" id="searchInput" placeholder="Search tasks...">
+        <button id="searchBtn">Search</button>
+        <button id="clearSearchBtn">Clear</button>
+      </div>
+
+      <div class="theme-toggle" title="Toggle Light/Dark mode">
+        <span>Light</span>
+        <label class="switch">
+          <input type="checkbox" id="themeSwitch">
+          <span class="slider"></span>
+        </label>
+        <span>Dark</span>
+      </div>
+    </div>
+  </header>
+
+  <div id="exportButtons">
+    <div class="btn-col">
+      <button id="exportCSV">Export Word</button>
+      <button id="globalAddTask">+ Add Task</button>
+      <button id="logoutBtn">Logout</button>
+    </div>
+  </div>
+
+  <div class="board">
+    <div class="column" data-dept="admin">
+      <h3><span class="title">CAT-1</span></h3>
+      <div class="tasks-container"></div>
+    </div>
+
+    <div class="column" data-dept="workforce">
+      <h3><span class="title">CAT-2</span></h3>
+      <div class="tasks-container"></div>
+    </div>
+
+    <div class="column" data-dept="compliance">
+      <h3><span class="title">CAT-3</span></h3>
+      <div class="tasks-container"></div>
+    </div>
+
+    <div class="column" data-dept="complaints">
+      <h3><span class="title">CAT-4</span></h3>
+      <div class="tasks-container"></div>
+    </div>
+
+  <div class="archive-wrapper">
+    <h2>Archived Tasks</h2>
+    <div id="archiveList"></div>
+  </div>
+
+</div>
+
+<!-- Export Modal -->
+<div class="modal" id="exportModal">
+  <div class="modal-content" style="width:420px;">
+    <h3>Export to Word</h3>
+    <p style="font-size:13px;color:var(--muted);margin:-4px 0 16px;">Select what to include in the report.</p>
+
+    <label style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);">Categories</label>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px;">
+      <label class="export-check"><input type="checkbox" id="expCat1" checked> <span>CAT-1</span></label>
+      <label class="export-check"><input type="checkbox" id="expCat2" checked> <span>CAT-2</span></label>
+      <label class="export-check"><input type="checkbox" id="expCat3" checked> <span>CAT-3</span></label>
+      <label class="export-check"><input type="checkbox" id="expCat4" checked> <span>CAT-4</span></label>
+    </div>
+
+    <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
+      <label style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);">Additional</label>
+      <div style="margin-top:10px;">
+        <label class="export-check"><input type="checkbox" id="expArchive"> <span>Include Archived Tasks</span></label>
+      </div>
+    </div>
+
+    <div class="modal-actions" style="margin-top:24px;">
+      <button id="exportConfirmBtn" class="btn-save">Export</button>
+      <button id="exportCancelBtn" class="btn-cancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal" id="taskModal">
+  <div class="modal-content">
+    <h3>Task Details</h3>
+
+    <label for="taskTitle">Title</label>
+    <input id="taskTitle" placeholder="Enter title">
+
+    <label for="taskDesc">Description</label>
+    <textarea id="taskDesc" placeholder="Enter description"></textarea>
+
+    <label for="taskUpdate">Update</label>
+    <textarea id="taskUpdate" placeholder="Add the latest update (optional)"></textarea>
+
+    <label for="taskDept">Department</label>
+    <select id="taskDept">
+      <option value="" disabled selected>Select department</option>
+      <option value="CAT-1">CAT-1</option>
+      <option value="CAT-2">CAT-2</option>
+      <option value="CAT-3">CAT-3</option>
+      <option value="CAT-4">CAT-4</option>
+    </select>
+
+    <label for="taskOwner">Owner</label>
+    <input id="taskOwner" placeholder="Enter owner (optional)">
+
+    <label for="taskReceived">Received Date</label>
+    <input type="date" id="taskReceived">
+
+    <label for="taskDeadline">Deadline</label>
+    <input type="date" id="taskDeadline">
+
+    <label for="taskUrgency">Urgency</label>
+    <select id="taskUrgency">
+      <option value="low">Low</option>
+      <option value="medium">Mid</option>
+      <option value="high">High</option>
+    </select>
+
+    <div class="modal-actions">
+      <button id="saveBtn" class="btn-save">Save</button>
+      <button id="cancelBtn" class="btn-cancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
